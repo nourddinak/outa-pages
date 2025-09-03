@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }} - Hosted by OUTA</title>
+    <style>
+        .outa-watermark {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            z-index: 9999;
+            text-decoration: none;
+        }
+        .outa-watermark:hover {
+            background: rgba(99, 102, 241, 0.9);
+        }
+    </style>
+</head>
+<body>
+    {{ content|safe }}
+    <a href="{{ url_for('home') }}" class="outa-watermark" target="_blank">Hosted by OUTA</a>
+</body>
+</html>

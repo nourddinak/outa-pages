@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OUTA - Visual Page Builder (Beta)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0a0a1a;
+            color: #e0e0e0;
+        }
+
+        .hero-bg {
+            position: relative;
+            background-color: black;
+            background-image: url('https://20essentials.github.io/project-000-128/assets/n1.avif');
+            background-position: center;
+            background-size: cover;
+            background-attachment: fixed;
+        }
+
+        .hero-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            mix-blend-mode: overlay;
+            animation: moveInner 10s ease infinite alternate;
+        }
+        
+        .content-wrapper {
+            position: relative;
+            z-index: 3;
+        }
+
+        @keyframes moveInner {
+            0% { background-color: #f0f; }
+            25% { background-color: #0f0; }
+            50% { background-color: #00f; }
+            75% { background-color: #f00; }
+            100% { background-color: #ff0; }
+        }
+        
+        .feature-card {
+            background: rgba(26, 26, 78, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.7);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        .btn-start {
+            background: #6366f1;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        }
+        .btn-start:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.8);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            border: 2px solid #818cf8; /* Corresponds to indigo-400 */
+        }
+        .btn-secondary:hover {
+            background: #818cf8;
+            color: #0a0a1a;
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(129, 140, 248, 0.5);
+        }
+
+        /* --- New Contact Form Styles --- */
+        #contact {
+            padding: 4rem 1.5rem;
+            font-family: 'Montserrat', sans-serif;
+            position: relative;
+            background-color: black;
+            background-image: url('https://20essentials.github.io/project-000-128/assets/n1.avif');
+            background-position: center;
+            background-size: cover;
+        }
+        
+        #contact::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            mix-blend-mode: overlay;
+            animation: moveInner 10s ease infinite alternate;
+        }
+
+        #contact .container {
+            max-width: 700px;
+            width: 100%;
+            margin: auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        #contact .screen {
+            position: relative;
+            background: #2d3748; /* Darker blue-gray */
+            border-radius: 15px;
+        }
+        
+        @keyframes animateGlow {
+           0%{background-position:0% 50%}
+           50%{background-position:100% 50%}
+           100%{background-position:0% 50%}
+        }
+
+        #contact .screen::after {
+            content: "";
+            position: absolute;
+            top: 35px;
+            left: 0;
+            z-index: -1;
+            height: 100%;
+            width: 100%;
+            transform: scale(0.85);
+            filter: blur(45px);
+            background: linear-gradient(270deg, #0fffc1, #7e0fff);
+            background-size: 200% 200%;
+            animation: animateGlow 10s ease infinite;
+        }
+
+
+        #contact .screen-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: #4a5568; /* Slightly lighter header */
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+
+        #contact .screen-header-left {
+            margin-right: auto;
+        }
+
+        #contact .screen-header-button {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            margin-right: 3px;
+            border-radius: 8px;
+            background: white;
+        }
+
+        #contact .screen-header-button.close { background: #ed64a6; } /* Pink */
+        #contact .screen-header-button.maximize { background: #f6e05e; } /* Yellow */
+        #contact .screen-header-button.minimize { background: #68d391; } /* Green */
+
+        #contact .screen-header-right { display: flex; }
+        #contact .screen-header-ellipsis {
+            width: 3px;
+            height: 3px;
+            margin-left: 2px;
+            border-radius: 8px;
+            background: #999;
+        }
+
+        #contact .screen-body { display: flex; }
+        #contact .screen-body-item { flex: 1; padding: 50px; }
+        #contact .screen-body-item.left {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #contact .app-title {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            font-size: 26px;
+            font-weight: 900;
+            animation: textColor 10s ease infinite;
+        }
+
+        @keyframes textColor {
+            0% { color: #7e0fff; }
+            50% { color: #0fffc1; }
+            100% { color: #7e0fff; }
+        }
+        
+        @keyframes textColorAfter {
+            0% { background: #7e0fff; }
+            50% { background: #0fffc1; }
+            100% { background: #7e0fff; }
+        }
+
+        #contact .app-title:after {
+            content: '';
+            display: block;
+            position: absolute;
+            left: 0;
+            bottom: -10px;
+            width: 25px;
+            height: 4px;
+            animation: textColorAfter 10s ease infinite;
+        }
+
+        #contact .app-contact {
+            margin-top: auto;
+            font-size: 8px;
+            color: #a0aec0; /* Lighter gray */
+        }
+
+        #contact .app-form-group { margin-bottom: 15px; }
+        #contact .app-form-group.message { margin-top: 40px; }
+        #contact .app-form-group.buttons { margin-bottom: 0; text-align: right; }
+
+        #contact .app-form-control {
+            width: 100%;
+            padding: 10px 0;
+            background: none;
+            border: none;
+            border-bottom: 1px solid #666;
+            color: #ddd;
+            font-size: 14px;
+            text-transform: uppercase;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        #contact .app-form-control::placeholder { color: #a0aec0; }
+        #contact .app-form-control:focus { border-bottom-color: #ddd; }
+        #contact .app-form-button {
+            background: none;
+            border: none;
+            color: #667eea;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+            padding: 0.5rem;
+        }
+        #contact .app-form-button:hover:not(:disabled) { color: #829dff; }
+        #contact .app-form-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+
+        @media screen and (max-width: 520px) {
+            #contact .screen-body { flex-direction: column; }
+            #contact .screen-body-item.left { margin-bottom: 30px; }
+            #contact .app-title { flex-direction: row; font-size: 22px; }
+            #contact .app-title span { margin-right: 12px; }
+            #contact .app-title:after { display: none; }
+            #contact .screen-body-item { padding: 30px; }
+        }
+
+        @media screen and (max-width: 600px) {
+            #contact .screen-body { padding: 40px; }
+            #contact .screen-body-item { padding: 0; }
+        }
+
+        /* --- Saved Projects & Modal Styles --- */
+        .project-card {
+            background: rgba(26, 26, 78, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.7);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+        .project-thumbnail {
+            background-color: #1a202c;
+            aspect-ratio: 16 / 9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a0aec0;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .btn-project {
+            background: transparent;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            border: 1px solid #818cf8;
+        }
+        .btn-project:hover {
+            background: #818cf8;
+            color: #0a0a1a;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: #1a202c;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        .modal-code-block {
+            background: #0a0a1a;
+            padding: 1rem;
+            border-radius: 5px;
+            max-height: 40vh;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Hero Section -->
+    <main class="hero-bg">
+        <!-- Profile Icon -->
+        <div id="user-profile-icon" class="absolute top-4 right-4 z-40 w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center cursor-pointer text-white text-xl font-bold hover:bg-indigo-700 transition-colors">
+            <span id="user-initial">U</span>
+        </div>
+
+        <!-- Profile Popup -->
+        <div id="user-popup" class="hidden absolute top-20 right-4 z-50 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 text-left">
+            <div class="border-b border-gray-600 pb-2 mb-2">
+                <p id="popup-user-name" class="font-bold text-white">User Name</p>
+                <p id="popup-user-email" class="text-sm text-gray-400">user@example.com</p>
+            </div>
+            <button id="sign-out-btn" class="w-full text-left px-2 py-1.5 text-sm text-red-400 hover:bg-gray-700 rounded">
+                Sign Out
+            </button>
+        </div>
+
+        <div class="content-wrapper flex flex-col items-center justify-center min-h-screen p-6 text-center">
+            <header class="mb-8">
+                <div class="flex items-center gap-4">
+                    <h1 class="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter">OUTA</h1>
+                    <span class="bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full -translate-y-4">BETA</span>
+                </div>
+            </header>
+            
+            <p class="text-base sm:text-lg md:text-xl max-w-2xl text-gray-300 mb-8">
+                Welcome to OUTA, the visual page builder for modern e-commerce. Go from idea to a high-converting landing page in minutes. No code required.
+            </p>
+            
+            <!-- Action Buttons Container -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="main.html" class="btn-start inline-flex items-center gap-2">
+                    Start Building for Free
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </a>
+                <a href="host.html" class="btn-secondary inline-flex items-center gap-2">
+                    Host Your Page Now
+                    <i data-lucide="server" class="w-5 h-5"></i>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Features Section -->
+    <section id="features" class="content-wrapper py-16 px-4 md:py-20 md:px-6 bg-[#0a0a1a]">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-5xl font-bold">All The Features You Need</h2>
+                <p class="text-md md:text-lg text-gray-400 mt-2">Built to be powerful, yet simple to use.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="feature-card rounded-lg p-6">
+                    <i data-lucide="layout-template" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                    <h3 class="text-xl font-bold mb-2">Visual Editor</h3>
+                    <p class="text-gray-400">Drag, drop, and customize sections in a live preview. See your changes instantly as you build your perfect page.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="feature-card rounded-lg p-6">
+                    <i data-lucide="box" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                    <h3 class="text-xl font-bold mb-2">Rich Components</h3>
+                    <p class="text-gray-400">Start with pre-built sections like Product Pages, Video Promos, Welcome Bars, and Image Galleries.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="feature-card rounded-lg p-6">
+                    <i data-lucide="code" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                    <h3 class="text-xl font-bold mb-2">Custom Liquid Code</h3>
+                    <p class="text-gray-400">Power users can add their own custom Liquid sections for unlimited flexibility and control.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div class="feature-card rounded-lg p-6">
+                    <i data-lucide="smartphone" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                    <h3 class="text-xl font-bold mb-2">Responsive Preview</h3>
+                    <p class="text-gray-400">Instantly switch between desktop and mobile previews to ensure your page looks great on all devices.</p>
+                </div>
+                 <!-- Feature 5 -->
+                <div class="feature-card rounded-lg p-6">
+                    <i data-lucide="settings-2" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                    <h3 class="text-xl font-bold mb-2">Powerful Integrations</h3>
+                    <p class="text-gray-400">Connect your pages with Google Sheets, Facebook Pixel, and TikTok Pixel with a simple copy-paste.</p>
+                </div>
+                <!-- Feature 6 -->
+                <div class="feature-card rounded-lg p-6">
+                    <i data-lucide="download" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                    <h3 class="text-xl font-bold mb-2">Easy Export</h3>
+                    <p class="text-gray-400">When you're done, get clean and complete HTML, CSS, and JS to host anywhere on the web.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Saved Projects Section -->
+    <section id="saved-projects" class="content-wrapper py-16 px-4 md:py-20 md:px-6 bg-[#0a0a1a]">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-5xl font-bold">Your Saved Projects</h2>
+                <p class="text-md md:text-lg text-gray-400 mt-2">Continue editing or export your creations.</p>
+            </div>
+            
+            <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Project cards will be inserted here by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact">
+        <div class="container">
+            <div class="screen">
+                <div class="screen-header">
+                    <div class="screen-header-left">
+                        <div class="screen-header-button close"></div>
+                        <div class="screen-header-button maximize"></div>
+                        <div class="screen-header-button minimize"></div>
+                    </div>
+                    <div class="screen-header-right">
+                        <div class="screen-header-ellipsis"></div>
+                        <div class="screen-header-ellipsis"></div>
+                        <div class="screen-header-ellipsis"></div>
+                    </div>
+                </div>
+                <div class="screen-body">
+                    <div class="screen-body-item left">
+                        <div class="app-title" id="contact-title">
+                            <span>CONTACT</span>
+                            <span>US</span>
+                        </div>
+                        <div class="app-contact">
+                            OUTA is in beta. We'd love to hear your feedback!<br>
+                            <a href="mailto:feedback@outa-builder.com" class="hover:underline">feedback@outa-builder.com</a>
+                        </div>
+                    </div>
+                    <div class="screen-body-item">
+                        <div class="app-form">
+                            <div class="app-form-group">
+                                <input id="contact-name" class="app-form-control" placeholder="NAME" required>
+                            </div>
+                            <div class="app-form-group">
+                                <input id="contact-email" class="app-form-control" type="email" placeholder="EMAIL" required>
+                            </div>
+                            <div class="app-form-group message">
+                                <input id="contact-message" class="app-form-control" placeholder="MESSAGE" required>
+                            </div>
+                            <div class="app-form-group buttons">
+                                <button id="contact-cancel-btn" type="button" class="app-form-button">CANCEL</button>
+                                <button id="contact-send-btn" type="submit" class="app-form-button">SEND</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="text-center text-sm text-indigo-100 mt-8 relative z-10">&copy; 2025 OUTA. All Rights Reserved.</div>
+    </section>
+
+    <!-- Code Modal -->
+    <div id="code-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="modal-title" class="text-2xl font-bold mb-4">Project Code</h3>
+            <pre><code id="modal-code" class="modal-code-block text-green-300"></code></pre>
+            <div class="mt-6 text-right">
+                 <button id="close-modal-btn" class="btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // --- User Profile Logic ---
+        const userProfileIcon = document.getElementById('user-profile-icon');
+        const userPopup = document.getElementById('user-popup');
+        
+        // Placeholder user data - replace with actual user data
+        const currentUser = {
+            name: "Alex Doe",
+            email: "alex.doe@example.com"
+        };
+
+        // Populate user info
+        document.getElementById('user-initial').textContent = currentUser.name.charAt(0).toUpperCase();
+        document.getElementById('popup-user-name').textContent = currentUser.name;
+        document.getElementById('popup-user-email').textContent = currentUser.email;
+
+        userProfileIcon.addEventListener('click', (event) => {
+            event.stopPropagation(); // Prevents the window click listener from firing immediately
+            userPopup.classList.toggle('hidden');
+        });
+        
+        // Close popup when clicking outside
+        window.addEventListener('click', (event) => {
+            if (!userPopup.classList.contains('hidden') && !userPopup.contains(event.target)) {
+                 userPopup.classList.add('hidden');
+            }
+        });
+        
+        document.getElementById('sign-out-btn').addEventListener('click', () => {
+            console.log("User signed out");
+            // Add your sign-out logic here (e.g., redirect to login page)
+            userPopup.classList.add('hidden');
+        });
+
+
+        // --- Saved Projects Logic ---
+        const projectsGrid = document.getElementById('projects-grid');
+        const codeModal = document.getElementById('code-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCode = document.getElementById('modal-code');
+
+        // Placeholder project data - this would come from localStorage or a server
+        const savedProjects = [
+            { id: 1, name: "Summer Sale Landing Page", code: "<h1>Summer Sale!</h1>" },
+            { id: 2, name: "New Product Launch", code: "<div><h2>Our New Product</h2></div>" },
+            { id: 3, name: "About Us Page", code: "<p>Welcome to our company.</p>" },
+        ];
+
+        const renderProjects = () => {
+            if (!projectsGrid) return;
+            projectsGrid.innerHTML = ''; // Clear existing projects
+            
+            savedProjects.forEach(project => {
+                const projectCard = document.createElement('div');
+                projectCard.className = 'project-card rounded-lg';
+                
+                projectCard.innerHTML = `
+                    <div class="project-thumbnail">
+                        <span>${project.name.split(' ').map(w => w[0]).join('')}</span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-4">${project.name}</h3>
+                        <div class="flex items-center gap-4">
+                            <a href="main.html?projectId=${project.id}" class="btn-project flex-1 text-center">
+                                Edit Project
+                            </a>
+                            <button data-project-id="${project.id}" class="btn-project get-code-btn flex-1">
+                                Get Code
+                            </button>
+                        </div>
+                    </div>
+                `;
+                projectsGrid.appendChild(projectCard);
+            });
+        };
+
+        const showCodeModal = (projectId) => {
+            const project = savedProjects.find(p => p.id == projectId);
+            if (project) {
+                modalTitle.textContent = `${project.name} - Code`;
+                modalCode.textContent = project.code;
+                codeModal.classList.remove('hidden');
+            }
+        };
+        
+        const hideCodeModal = () => {
+            codeModal.classList.add('hidden');
+        };
+
+        if (projectsGrid) {
+            projectsGrid.addEventListener('click', (event) => {
+                if (event.target.classList.contains('get-code-btn')) {
+                    const projectId = event.target.dataset.projectId;
+                    showCodeModal(projectId);
+                }
+            });
+        }
+        
+        closeModalBtn.addEventListener('click', hideCodeModal);
+        codeModal.addEventListener('click', (event) => {
+            if (event.target === codeModal) {
+                hideCodeModal();
+            }
+        });
+
+        renderProjects();
+
+        // --- Contact Form Logic ---
+        const sendBtn = document.getElementById('contact-send-btn');
+        const cancelBtn = document.getElementById('contact-cancel-btn');
+        const nameInput = document.getElementById('contact-name');
+        const emailInput = document.getElementById('contact-email');
+        const messageInput = document.getElementById('contact-message');
+        const titleElement = document.getElementById('contact-title');
+        const originalTitle = titleElement.innerHTML;
+
+        const googleScriptURL = 'https://script.google.com/macros/s/AKfycbwnqubTOvJctXBNUmbRT5skAw91bdRC7dCJxdWgWwIP6R9AvbOQPRjRSho20S8PaV5v/exec';
+
+        const clearForm = () => {
+            nameInput.value = '';
+            emailInput.value = '';
+            messageInput.value = '';
+        };
+
+        const handleFormSubmit = (e) => {
+            e.preventDefault();
+
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+            const message = messageInput.value.trim();
+
+            if (!name || !email || !message) {
+                console.warn('All fields are required.');
+                return;
+            }
+
+            sendBtn.innerText = 'SENDING...';
+            sendBtn.disabled = true;
+            cancelBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('message', message);
+            
+            fetch(googleScriptURL, {
+                method: 'POST', 
+                body: formData
+            }).then(response => {
+                clearForm();
+                titleElement.innerHTML = '<span>THANKS!</span><span>MESSAGE SENT</span>';
+            }).catch(error => {
+                console.error('Error:', error);
+                titleElement.innerHTML = '<span>ERROR</span><span>PLEASE TRY AGAIN</span>';
+            }).finally(() => {
+                setTimeout(() => {
+                    sendBtn.innerText = 'SEND';
+                    sendBtn.disabled = false;
+                    cancelBtn.disabled = false;
+                    titleElement.innerHTML = originalTitle;
+                }, 4000);
+            });
+        };
+        
+        sendBtn.addEventListener('click', handleFormSubmit);
+        cancelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            clearForm();
+        });
+
+    </script>
+</body>
+</html>
+

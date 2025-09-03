@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Visual Page Builder v3</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Icon Library (Lucide Icons) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* --- CSS Variables for Theming --- */
+        :root {
+            --bg-primary: linear-gradient(135deg, #3a3897 0%, #2c2a72 40%, #1a1a4e 100%);
+            --text-primary: #e0e0e0;
+            --text-secondary: #9ca3af;
+            --text-muted: #a1a1aa;
+            --panel-bg: rgba(26, 26, 78, 0.5);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --interactive-primary: #6366f1; /* Indigo */
+            --interactive-secondary: #3b82f6; /* Blue */
+            --interactive-success: #22c55e; /* Green */
+            --interactive-danger: #ef4444;  /* Red */
+            --interactive-muted: #6b7280;   /* Gray */
+            --code-bg: rgba(17, 24, 39, 0.7);
+            --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+            --scrollbar-thumb-hover: rgba(255, 255, 255, 0.4);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+            --radius-lg: 0.75rem;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        /* --- Scrollbar Styling --- */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
+
+        /* --- Preview Frame Styling --- */
+        .preview-mobile #canvas {
+            width: 375px; height: 667px;
+            border: 8px solid #333; border-radius: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.4s ease-in-out;
+        }
+        .preview-desktop #canvas {
+            width: 100%; height: 100%;
+            border: 1px solid var(--panel-border);
+            transition: all 0.4s ease-in-out;
+        }
+
+        /* --- Panel & Modal Base Styles --- */
+        .panel, .modal-content, .preview-controls {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: relative;
+            overflow: hidden;
+        }
+        .preview-controls { overflow: visible; }
+        
+        /* Shimmer Animation */
+        .panel::before, .modal-content::before, .preview-controls::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 70%);
+            animation: shimmer 15s infinite linear;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .app-container > * { animation: fadeInUp 0.6s ease-out forwards; }
+        .app-container > *:nth-child(2) { animation-delay: 0.1s; }
+        .app-container > *:nth-child(3) { animation-delay: 0.2s; }
+
+        /* --- UI Component Styling --- */
+        .rounded-lg { border-radius: var(--radius-lg); }
+        .shadow-md { box-shadow: var(--shadow-md); }
+        #settings-content { transition: opacity 0.15s ease-in-out; }
+        #settings-content.fade-out { opacity: 0; }
+        .border-b { border-color: var(--panel-border); }
+        pre { background-color: var(--code-bg) !important; }
+
+        /* General Button Styles */
+        .btn {
+            color: var(--text-primary);
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:active { transform: translateY(-1px) scale(0.98); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none !important; }
+
+        /* Specific Button Color Variants */
+        .btn-primary { background: rgba(99, 102, 241, 0.2); border-color: rgba(99, 102, 241, 0.5); }
+        .btn-primary:hover { background: rgba(99, 102, 241, 0.4); box-shadow: 0 0 15px rgba(99, 102, 241, 0.5); }
+        
+        .btn-success { background: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.5); }
+        .btn-success:hover { background: rgba(34, 197, 94, 0.4); box-shadow: 0 0 15px rgba(34, 197, 94, 0.5); }
+
+        .btn-danger { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.4); box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); }
+
+        .btn-muted { background: rgba(107, 114, 128, 0.2); border-color: rgba(107, 114, 128, 0.5); }
+        .btn-muted:hover { background: rgba(107, 114, 128, 0.4); box-shadow: 0 0 15px rgba(107, 114, 128, 0.5); }
+        
+        .btn-secondary { background: rgba(234, 179, 8, 0.2); border-color: rgba(234, 179, 8, 0.5); } /* Yellowish for custom */
+        .btn-secondary:hover { background: rgba(234, 179, 8, 0.4); box-shadow: 0 0 15px rgba(234, 179, 8, 0.5); }
+
+        .preview-btn.active { background-color: var(--interactive-primary) !important; box-shadow: 0 0 10px var(--interactive-primary); }
+
+        /* Accordion Styles */
+        .accordion-header { cursor: pointer; }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .accordion-item.open .accordion-content { max-height: 1000px; }
+        .accordion-item.open .accordion-icon { transform: rotate(90deg); }
+        .accordion-icon { transition: transform 0.2s ease-in-out; }
+    </style>
+</head>
+<body class="overflow-hidden">
+    
+    <div class="fixed top-0 left-0 right-0 p-4 flex justify-between items-center z-50 pointer-events-none">
+        <div class="pointer-events-auto">
+            <a href="{{ url_for('home') }}" id="back-btn" class="btn btn-muted backdrop-blur-sm bg-opacity-30 shadow-md"><i data-lucide="arrow-left"></i> <span class="hidden sm:inline">Back to Home</span></a>
+        </div>
+        <div class="project-controls panel rounded-lg p-2 flex items-center gap-2 shadow-md pointer-events-auto transition-all duration-300 hover:shadow-lg hover:bg-[rgba(26,26,78,0.7)]">
+             <i data-lucide="file-signature" class="ml-2 text-slate-400 flex-shrink-0"></i>
+            <input type="text" id="project-name-input" placeholder="Untitled Project" class="bg-transparent border-0 focus:ring-0 text-white placeholder-gray-400 font-semibold w-40 sm:w-48 transition-all duration-300 focus:w-64">
+             <div class="w-px h-6 bg-[var(--panel-border)]"></div>
+            <button id="save-project-btn" class="btn btn-primary"><i data-lucide="save"></i> <span class="hidden sm:inline">Save</span></button>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div class="app-container grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] h-screen gap-4 p-4 pt-24">
+
+        <!-- Panel 1: Library of Sections -->
+        <div class="panel rounded-lg">
+            <div class="relative z-10 h-full custom-scrollbar overflow-y-auto">
+                <aside id="library-panel" class="p-6 flex flex-col gap-4">
+                        <!-- Global Actions -->
+                        <div>
+                            <h2 class="text-xl font-bold border-b pb-2 mb-4">Global</h2>
+                            <div class="flex items-center justify-center gap-4">
+                                <button id="undo-btn" class="btn btn-muted w-full"><i data-lucide="undo-2"></i> Undo</button>
+                                <button id="redo-btn" class="btn btn-muted w-full"><i data-lucide="redo-2"></i> Redo</button>
+                            </div>
+                        </div>
+                        <!-- Page Actions -->
+                        <div>
+                            <h2 class="text-xl font-bold border-b pb-2 mb-4">Page Actions</h2>
+                            <div class="flex flex-col gap-3">
+                                <button id="get-code-btn" class="btn btn-success w-full justify-start"><i data-lucide="code"></i> Get Code</button>
+                                <button id="manage-fonts-btn" class="btn btn-muted w-full justify-start"><i data-lucide="pilcrow"></i> Manage Fonts</button>
+                                <button id="clear-canvas-btn" class="btn btn-danger w-full justify-start"><i data-lucide="trash-2"></i> Clear Canvas</button>
+                                <div>
+                                    <label for="bg-color-picker" class="block text-sm font-medium mb-1">Page Background</label>
+                                    <input type="color" id="bg-color-picker" value="#FFFFFF" class="w-full h-10 p-1 border rounded-md border-[var(--panel-border)] bg-transparent">
+                                </div>
+                            </div>
+                        </div>
+                        <hr class="border-[var(--panel-border)]">
+                        <!-- Section Library -->
+                        <div>
+                            <h2 class="text-xl font-bold border-b pb-2 mb-4">Sections</h2>
+                            <h3 class="text-md font-semibold mb-2 text-blue-400">Built-in Sections</h3>
+                            <div id="built-in-sections" class="flex flex-col gap-2">
+                                <!-- Section buttons will be dynamically added here -->
+                            </div>
+                            <hr class="border-[var(--panel-border)] my-4">
+                            <h3 class="text-md font-semibold mb-2 text-yellow-400">Your Liquid Sections</h3>
+                            <div id="liquid-sections-list" class="flex flex-col gap-2">
+                                <!-- Saved liquid sections will be dynamically added here -->
+                            </div>
+                            <button id="add-custom-section-btn" class="btn btn-secondary w-full text-left mt-4"><i data-lucide="plus-square"></i> Add New Liquid Section</button>
+                        </div>
+                </aside>
+            </div>
+        </div>
+
+        <!-- Panel 2: The Live Preview Canvas -->
+        <main class="canvas-container panel rounded-lg flex flex-col overflow-hidden">
+            <div class="preview-controls flex-shrink-0 flex items-center justify-center gap-4 p-3 border-b">
+                <!-- Viewport Controls -->
+                <div>
+                    <button class="preview-btn active px-4 py-2 rounded text-white" data-view="desktop">Desktop</button>
+                    <button class="preview-btn px-4 py-2 rounded" data-view="mobile">Mobile</button>
+                </div>
+            </div>
+            <div id="preview-wrapper" class="preview-desktop flex-grow p-6 bg-transparent flex justify-center items-start overflow-y-auto custom-scrollbar">
+                <iframe id="canvas" class="shadow-lg flex-shrink-0"></iframe>
+            </div>
+        </main>
+
+        <!-- Panel 3: Settings for the selected section -->
+        <div class="panel rounded-lg">
+            <div class="relative z-10 h-full custom-scrollbar overflow-y-auto">
+                <aside class="p-6">
+                    <h2 class="text-xl font-bold border-b pb-2 mb-4">Settings</h2>
+                    <div id="settings-content">
+                        <!-- Placeholder content, will be replaced by JS -->
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="code-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-75 z-50 justify-center items-center">
+        <div class="modal-content rounded-lg w-11/12 max-w-4xl h-5/6 flex flex-col p-6">
+            <div class="modal-header flex justify-between items-center border-b pb-3 mb-4">
+                <h2 class="text-2xl font-bold">Export Code</h2>
+                <button class="modal-close-btn text-3xl hover:text-white">&times;</button>
+            </div>
+            <div class="modal-body flex-grow overflow-hidden flex flex-col gap-4">
+                <div class="code-block flex flex-col flex-grow">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-semibold">Complete Page (HTML, CSS, JS)</h4>
+                        <button class="copy-btn btn btn-muted py-1 px-3 text-sm" data-target="full-code-output">Copy</button>
+                    </div>
+                    <pre class="flex-grow text-white p-4 rounded-md overflow-auto custom-scrollbar"><code id="full-code-output"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="font-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-75 z-50 justify-center items-center">
+        <div class="modal-content rounded-lg w-11/12 max-w-2xl flex flex-col p-6">
+            <div class="modal-header flex justify-between items-center border-b pb-3 mb-4">
+                <h2 class="text-2xl font-bold">Manage Google Fonts</h2>
+                <button class="modal-close-btn text-3xl hover:text-white">&times;</button>
+            </div>
+            <div class="modal-body flex-grow overflow-auto custom-scrollbar space-y-4">
+                <p class="text-sm">Paste the Google Fonts `<link>` tag and the full CSS rule to make the font available in the editor.</p>
+                <textarea id="font-code-input" class="w-full p-2 border rounded-md font-mono text-sm bg-transparent border-[var(--panel-border)] focus:border-indigo-400 focus:ring-0" placeholder="Paste your Google Fonts <link> tag here..."></textarea>
+                <textarea id="font-css-input" class="w-full p-2 border rounded-md font-mono text-sm bg-transparent border-[var(--panel-border)] focus:border-indigo-400 focus:ring-0" placeholder="Paste the full CSS rule here (e.g., body { font-family: 'Roboto', sans-serif; })"></textarea>
+            </div>
+            <div class="modal-footer mt-4 text-right">
+                <button id="add-font-btn" class="btn btn-primary px-6">Add Font</button>
+            </div>
+        </div>
+    </div>
+    <div id="custom-code-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-75 z-50 justify-center items-center">
+        <div class="modal-content rounded-lg w-11/12 max-w-3xl h-5/6 flex flex-col p-6">
+            <div class="modal-header flex justify-between items-center border-b pb-3 mb-4">
+                <h2 id="custom-code-modal-title" class="text-2xl font-bold">Add Liquid Section</h2>
+                <button class="modal-close-btn text-3xl hover:text-white">&times;</button>
+            </div>
+            <div class="modal-body flex-grow overflow-hidden flex flex-col gap-4">
+                <textarea id="liquid-code-input" class="flex-grow w-full p-2 border rounded-md font-mono text-sm bg-transparent border-[var(--panel-border)] focus:border-indigo-400 focus:ring-0 custom-scrollbar" placeholder="Paste your full Liquid section code here..."></textarea>
+                <div id="liquid-code-error-panel" class="hidden p-3 bg-red-900/50 border border-red-500 rounded-md text-sm"></div>
+            </div>
+            <div class="modal-footer mt-4 text-right">
+                <button id="add-custom-code-confirm-btn" class="btn btn-primary px-6">Save Section</button>
+            </div>
+        </div>
+    </div>
+    <div id="confirm-modal" class="modal-overlay hidden fixed inset-0 bg-black bg-opacity-75 z-50 justify-center items-center">
+        <div class="modal-content rounded-lg w-11/12 max-w-md flex flex-col p-6">
+            <h2 id="confirm-title" class="text-xl font-bold mb-4">Are you sure?</h2>
+            <p id="confirm-message" class="mb-6">This action cannot be undone.</p>
+            <div class="modal-footer flex justify-end gap-4">
+                <button id="confirm-cancel-btn" class="btn btn-muted px-6">Cancel</button>
+                <button id="confirm-ok-btn" class="btn btn-danger px-6">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification-toast" class="fixed bottom-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 translate-y-10 transition-all duration-300 pointer-events-none z-[100]">
+        This is a notification!
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- DOM Element References ---
+        const libraryPanel = document.getElementById('library-panel');
+        const canvasFrame = document.getElementById('canvas');
+        const settingsContent = document.getElementById('settings-content');
+        const previewWrapper = document.getElementById('preview-wrapper');
+        const previewControls = document.querySelector('.preview-controls');
+        const getCodeBtn = document.getElementById('get-code-btn');
+        const manageFontsBtn = document.getElementById('manage-fonts-btn');
+        const builtInSectionsContainer = document.getElementById('built-in-sections');
+        const liquidSectionsListContainer = document.getElementById('liquid-sections-list');
+        const notificationToast = document.getElementById('notification-toast');
+        const clearCanvasBtn = document.getElementById('clear-canvas-btn');
+        const bgColorPicker = document.getElementById('bg-color-picker');
+        const undoBtn = document.getElementById('undo-btn');
+        const redoBtn = document.getElementById('redo-btn');
+        const addCustomSectionBtn = document.getElementById('add-custom-section-btn');
+        const customCodeModal = document.getElementById('custom-code-modal');
+        const customCodeModalTitle = document.getElementById('custom-code-modal-title');
+        const addCustomCodeConfirmBtn = document.getElementById('add-custom-code-confirm-btn');
+        const liquidCodeInput = document.getElementById('liquid-code-input');
+        const liquidCodeErrorPanel = document.getElementById('liquid-code-error-panel');
+        const backBtn = document.getElementById('back-btn');
+        const projectNameInput = document.getElementById('project-name-input');
+        const saveProjectBtn = document.getElementById('save-project-btn');
+
+        // --- Application State ---
+        let state = {};
+        const getInitialState = () => ({
+            projectName: "Untitled Project",
+            pageSections: [
+                {
+                    ...initializeLandingPage(),
+                    id: `instance-landing-1`,
+                    type: 'landing-page'
+                }
+            ],
+            customFonts: [],
+            liquidSections: [],
+            selectedElementId: `instance-landing-1`,
+            canvasBackgroundColor: '#111827',
+        });
+
+        const GOOGLE_SHEET_SCRIPT_CONTENT = `function doGet(e) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("Orders");
+    if (!sheet) {
+      sheet = ss.insertSheet("Orders");
+    }
+
+    if (sheet.getLastRow() === 0) {
+      const header = ["Timestamp", "Name", "Phone", "City", "Product", "Price"];
+      sheet.appendRow(header);
+    }
+
+    const name = e.parameter.name || "N/A";
+    const phone = e.parameter.phone || "N/A";
+    const city = e.parameter.city || "N/A";
+    const product = e.parameter.product || "N/A";
+    const price = e.parameter.price || "N/A";
+    const timestamp = new Date();
+
+    sheet.appendRow([timestamp, name, phone, city, product, price]);
+    
+    return ContentService.createTextOutput(JSON.stringify({
+      "result": "success",
+      "data": JSON.stringify(e.parameter)
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    Logger.log(error.toString());
+    return ContentService.createTextOutput(JSON.stringify({
+      "result": "error",
+      "error": error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+
+        let debounceTimer;
+        let saveStateDebounceTimer;
+        let editingLiquidSectionId = null;
+        let history = [];
+        let historyIndex = -1;
+        const MAX_HISTORY_STATES = 50;
+
+        // --- Component Definitions ---
+        const components = {
+            'welcome-bar': { name: 'Welcome Bar', initializer: initializeWelcomeBar, renderer: renderWelcomeBar, settingsRenderer: renderWelcomeBarSettings },
+            'product-page': { name: 'Product Page', initializer: initializeProductPage, renderer: renderProductPage, settingsRenderer: renderProductPageSettings },
+            'promoted-video': { name: 'Promoted Video', initializer: initializePromotedVideo, renderer: renderPromotedVideo, settingsRenderer: renderPromotedVideoSettings },
+            'landing-page': { name: 'Landing Page', initializer: initializeLandingPage, renderer: renderLandingPage, settingsRenderer: renderLandingPageSettings },
+        };
+        
+        // --- INITIALIZATION ---
+        function init() {
+            populateLibrary();
+            setupEventListeners();
+            loadState();
+            pushStateToHistory(false); // Initial state push without saving
+            renderCanvas(true); // Full render on initial load
+            lucide.createIcons();
+        }
+        
+        // --- State Persistence (LocalStorage) ---
+        function saveState() {
+            try {
+                localStorage.setItem('visualBuilderState_v3', JSON.stringify(state));
+            } catch (e) {
+                console.error("Failed to save state:", e);
+                showNotification("Could not save state to local storage.", true);
+            }
+        }
+
+        // --- OPTIMIZATION: Debounced saveState to prevent excessive localStorage writes ---
+        function debouncedSaveState() {
+            clearTimeout(saveStateDebounceTimer);
+            saveStateDebounceTimer = setTimeout(saveState, 300);
+        }
+
+        function loadState() {
+            try {
+                const savedState = localStorage.getItem('visualBuilderState_v3');
+                state = savedState ? JSON.parse(savedState) : getInitialState();
+            } catch (e) {
+                console.error("Failed to load state:", e);
+                localStorage.removeItem('visualBuilderState_v3');
+                state = getInitialState();
+                showNotification("Failed to load saved state.", true);
+            }
+            bgColorPicker.value = state.canvasBackgroundColor || '#FFFFFF';
+            projectNameInput.value = state.projectName || 'Untitled Project';
+        }
+
+        // --- History Management (Undo/Redo) ---
+        function pushStateToHistory(shouldSave = true) {
+            if (historyIndex < history.length - 1) {
+                history = history.slice(0, historyIndex + 1);
+            }
+            history.push(JSON.stringify(state));
+            if (history.length > MAX_HISTORY_STATES) {
+                history.shift();
+            }
+            historyIndex = history.length - 1;
+            updateHistoryButtons();
+            if (shouldSave) debouncedSaveState();
+        }
+        
+        function undo() { if (historyIndex > 0) { historyIndex--; restoreStateFromHistory(); } }
+        function redo() { if (historyIndex < history.length - 1) { historyIndex++; restoreStateFromHistory(); } }
+
+        function restoreStateFromHistory() {
+            state = JSON.parse(history[historyIndex]);
+            bgColorPicker.value = state.canvasBackgroundColor;
+            projectNameInput.value = state.projectName;
+            populateLibrary();
+            renderCanvas(true); // Full render is needed for undo/redo
+            renderSettings();
+            updateHistoryButtons();
+            saveState(); // Save immediately on undo/redo
+        }
+
+        function updateHistoryButtons() {
+            undoBtn.disabled = historyIndex <= 0;
+            redoBtn.disabled = historyIndex >= history.length - 1;
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function populateLibrary() {
+            builtInSectionsContainer.innerHTML = Object.keys(components).map(type => {
+                const component = components[type];
+                return `<button class="btn btn-primary w-full text-left" data-action="add-built-in" data-section-type="${type}">Add ${component.name}</button>`;
+            }).join('');
+
+            if(!state.liquidSections || state.liquidSections.length === 0) {
+                liquidSectionsListContainer.innerHTML = `<p class="text-sm text-center text-[var(--text-muted)] p-2">No custom sections saved yet.</p>`;
+            } else {
+                liquidSectionsListContainer.innerHTML = state.liquidSections.map(sec => `
+                <div class="bg-white/5 p-2 rounded-md flex items-center justify-between gap-2">
+                    <span class="truncate font-semibold text-sm">${sec.name}</span>
+                    <div class="flex-shrink-0 flex items-center gap-1">
+                        <button class="btn btn-primary !p-2 h-8 w-8" data-action="add-liquid" data-id="${sec.id}" title="Add to Canvas"><i data-lucide="plus" class="h-4 w-4"></i></button>
+                        <button class="btn btn-muted !p-2 h-8 w-8" data-action="edit-liquid" data-id="${sec.id}" title="Edit Code"><i data-lucide="edit-3" class="h-4 w-4"></i></button>
+                        <button class="btn btn-danger !p-2 h-8 w-8" data-action="delete-liquid" data-id="${sec.id}" title="Delete Section"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function renderEmptyCanvas() {
+            const iframeDoc = canvasFrame.contentDocument;
+            iframeDoc.open();
+            iframeDoc.write(`<!DOCTYPE html><html><head><style>
+                body { margin: 0; background-color: ${state.canvasBackgroundColor}; color: #9ca3af; transition: background-color 0.3s; 
+                display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Outfit', sans-serif; text-align: center; }
+                .placeholder { border: 2px dashed #4b5563; padding: 2rem; border-radius: 0.75rem; }
+            </style></head><body><div class="placeholder">
+                <p>Your canvas is empty.</p>
+                <p style="font-size: 0.9rem;">Add a section from the left panel to begin.</p>
+            </div></body></html>`);
+            iframeDoc.close();
+            settingsContent.innerHTML = ''; // Clear settings panel
+        }
+        
+        function renderCanvas(isFullRender = false) {
+            // OPTIMIZATION: If not a full render, delegate to individual updates.
+            if (!isFullRender) {
+                state.pageSections.forEach(section => updateSection(section.id));
+                return;
+            }
+            
+            if (!state.pageSections || state.pageSections.length === 0) {
+                renderEmptyCanvas();
+                return;
+            }
+
+            let allHTML = '', allCSS = '';
+            
+            state.pageSections.forEach(section => {
+                const { html, css } = getSectionRenderables(section);
+                allHTML += `<div class="canvas-section" data-id="${section.id}" draggable="true">${html}<div class="section-controls"><button class="duplicate-btn" aria-label="Duplicate section"><i data-lucide="copy" class="h-4 w-4"></i></button><button class="delete-btn" aria-label="Delete section">&times;</button></div></div>`;
+                allCSS += `<style data-style-id="${section.id}">${css}</style>`;
+            });
+
+            const fontLinks = (state.customFonts || []).map(font => font.linkTag).join('\n');
+            const fontCSS = (state.customFonts || []).map(font => font.cssRule).join('\n');
+            
+            const iframeDoc = canvasFrame.contentDocument;
+            iframeDoc.open();
+            iframeDoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    ${fontLinks}
+                    <script src="https://unpkg.com/lucide@latest"><\/script>
+                    <style>
+                        body { padding: 1rem; font-family: 'Outfit', sans-serif; background-color: ${state.canvasBackgroundColor}; transition: background-color 0.3s; line-height: 1.6; }
+                        .canvas-section { position: relative; cursor: pointer; transition: outline 0.2s ease; }
+                        .canvas-section.selected { outline: 3px solid #60a5fa; z-index: 10; }
+                        .canvas-section:hover:not(.selected) { outline: 2px dashed #9ca3af; }
+                        .section-controls { display: none; position: absolute; top: -15px; right: -15px; z-index: 11; background: #333; padding: 4px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; gap: 4px; }
+                        .delete-btn, .duplicate-btn { background: #ef4444; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px; line-height: 28px; text-align: center; display: flex; align-items: center; justify-content: center;}
+                        .duplicate-btn { background: #3b82f6; }
+                        .canvas-section.selected .section-controls { display: flex; }
+                        .drag-over-top { border-top: 3px dashed #60a5fa !important; }
+                        .drag-over-bottom { border-bottom: 3px dashed #60a5fa !important; }
+                        .dragging { opacity: 0.5; }
+                        ${fontCSS}
+                    </style>
+                    ${allCSS}
+                </head>
+                <body>
+                    ${allHTML}
+                    <script>lucide.createIcons();<\/script>
+                </body>
+                </html>
+            `);
+            iframeDoc.close();
+            
+            const setupIframe = () => {
+                const iframeBody = canvasFrame.contentDocument.body;
+                if (iframeBody) {
+                    iframeBody.addEventListener('click', handleCanvasClick);
+                    initDragAndDrop(iframeBody);
+                    renderSelectionOutline();
+                }
+            };
+
+            if (canvasFrame.contentDocument.readyState === 'complete') {
+                setupIframe();
+            } else {
+                canvasFrame.onload = setupIframe;
+            }
+        }
+
+        function renderSettings() {
+            const renderContent = () => {
+                if (!state.selectedElementId) {
+                    settingsContent.innerHTML = `<div class="text-center text-[var(--text-secondary)] p-4">
+                        <i data-lucide="mouse-pointer-click" class="mx-auto h-12 w-12 mb-3"></i>
+                        <h3 class="font-semibold text-lg text-[var(--text-primary)]">Select a Section</h3>
+                        <p>Click a section on the canvas to see its settings here.</p>
+                    </div>`;
+                } else {
+                    const section = state.pageSections.find(sec => sec.id === state.selectedElementId);
+                    if (!section) return;
+
+                    if (section.type === 'liquid') {
+                        settingsContent.innerHTML = renderLiquidSectionSettings(section);
+                    } else {
+                        const settingsRenderer = components[section.type]?.settingsRenderer;
+                        settingsContent.innerHTML = settingsRenderer ? settingsRenderer(section, state) : `<p class="text-[var(--text-secondary)]">No settings available for this section.</p>`;
+                    }
+                }
+                lucide.createIcons();
+                settingsContent.classList.remove('fade-out');
+            };
+
+            settingsContent.classList.add('fade-out');
+            // OPTIMIZATION: Reduced timeout for faster settings panel updates.
+            setTimeout(renderContent, 50);
+        }
+
+        // --- EVENT LISTENERS SETUP ---
+        function setupEventListeners() {
+            libraryPanel.addEventListener('click', handleLibraryClick);
+            settingsContent.addEventListener('input', handleSettingsInput);
+            settingsContent.addEventListener('click', handleSettingsClick);
+            previewControls.addEventListener('click', handlePreviewControls);
+            
+            setupModal('code-modal', getCodeBtn, generateAndShowCode);
+            setupModal('font-modal', manageFontsBtn);
+            setupModal('custom-code-modal', addCustomSectionBtn, () => showCustomCodeModal());
+
+            document.getElementById('add-font-btn').addEventListener('click', handleAddFont);
+            addCustomCodeConfirmBtn.addEventListener('click', handleSaveCustomCode);
+            liquidCodeInput.addEventListener('input', () => validateLiquidCode(liquidCodeInput.value));
+            document.getElementById('code-modal').addEventListener('click', handleCopyCode);
+            clearCanvasBtn.addEventListener('click', handleClearCanvas);
+            bgColorPicker.addEventListener('input', handleBgColorChange);
+            undoBtn.addEventListener('click', undo);
+            redoBtn.addEventListener('click', redo);
+            saveProjectBtn.addEventListener('click', handleSaveProject);
+            backBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.history.back();
+            });
+        }
+
+        // --- EVENT HANDLERS & CORE LOGIC ---
+        function handleSaveProject() {
+            const newName = projectNameInput.value.trim();
+            if (newName) {
+                state.projectName = newName;
+                saveState(); // Direct save, not debounced
+                showNotification(`Project "${newName}" saved!`);
+            } else {
+                showNotification("Project name cannot be empty.", true);
+            }
+        }
+        
+        function handleAddFont() {
+            const linkInput = document.getElementById('font-code-input');
+            const cssInput = document.getElementById('font-css-input');
+            const linkTag = linkInput.value.trim();
+            const cssRule = cssInput.value.trim();
+
+            if (!linkTag.startsWith('<link') || !cssRule.includes('{')) {
+                showNotification('Please provide a valid <link> tag and CSS rule.', true); return;
+            }
+            const nameMatch = cssRule.match(/font-family:\s*['"]?([^,'"]+)/);
+            if (!nameMatch) {
+                showNotification('Could not extract font-family from CSS.', true); return;
+            }
+            const name = nameMatch[1];
+            if ((state.customFonts || []).some(font => font.name === name)) {
+                showNotification(`Font '${name}' has already been added.`, true); return;
+            }
+            
+            if (!state.customFonts) state.customFonts = [];
+            state.customFonts.push({ name, linkTag, cssRule });
+            linkInput.value = '';
+            cssInput.value = '';
+            document.getElementById('font-modal').classList.add('hidden');
+            renderCanvas(true); // Full render is acceptable here as it's an infrequent action
+            if(state.selectedElementId) renderSettings();
+            pushStateToHistory();
+        }
+
+        function handleSaveCustomCode() {
+            const fullCode = liquidCodeInput.value;
+            if (!validateLiquidCode(fullCode)) {
+                showNotification('Please fix the errors in your Liquid code before saving.', true);
+                return;
+            }
+
+            const schemaMatch = fullCode.match(/{% schema %}([\s\S]*?){% endschema %}/);
+            const schema = JSON.parse(schemaMatch[1]);
+            
+            if (!state.liquidSections) state.liquidSections = [];
+
+            if (editingLiquidSectionId) {
+                const sectionToUpdate = state.liquidSections.find(s => s.id === editingLiquidSectionId);
+                sectionToUpdate.name = schema.name || 'Custom Liquid Section';
+                sectionToUpdate.fullCode = fullCode;
+                showNotification(`Section "${sectionToUpdate.name}" updated!`, false);
+            } else {
+                const newLiquidSection = {
+                    id: `liquid-master-${Date.now()}`,
+                    name: schema.name || 'Custom Liquid Section',
+                    fullCode: fullCode,
+                };
+                state.liquidSections.push(newLiquidSection);
+                showNotification(`Section "${newLiquidSection.name}" saved!`, false);
+            }
+
+            customCodeModal.classList.add('hidden');
+            populateLibrary();
+            renderCanvas(true); // Full render needed if existing sections on canvas need updating
+            pushStateToHistory();
+        }
+
+        function handleSettingsInput(event) {
+            if (!state.selectedElementId) return;
+            const section = state.pageSections.find(sec => sec.id === state.selectedElementId);
+            if (!section) return;
+
+            const input = event.target;
+            const settingId = input.dataset.setting;
+
+            let value;
+            switch (input.type) {
+                case 'checkbox': value = input.checked; break;
+                case 'range':
+                case 'number': value = parseFloat(input.value); break;
+                default: value = input.value;
+            }
+            
+            const targetObject = section.type === 'liquid' ? section.settings : section;
+            targetObject[settingId] = value;
+
+            if (input.type === 'range' || (input.type === 'number' && input.previousElementSibling?.type === 'range') || (input.type === 'range' && input.nextElementSibling?.type === 'number')) {
+                const group = input.closest('.flex');
+                const label = input.closest('.settings-group').querySelector('label');
+                const rangeInput = group.querySelector('input[type="range"]');
+                const numberInput = group.querySelector('input[type="number"]');
+
+                if (label) {
+                    label.textContent = `${label.textContent.split('(')[0].trim()} (${value}${rangeInput.dataset.unit || ''})`;
+                }
+                if (rangeInput && numberInput) {
+                    if (input.type === 'range') {
+                        numberInput.value = value;
+                    } else {
+                        rangeInput.value = value;
+                    }
+                }
+            }
+            
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                updateSection(section.id);
+                pushStateToHistory();
+            }, 150);
+        }
+
+        function generateAndShowCode() {
+            let allHTML = '', allCSS = '';
+
+            state.pageSections.forEach(sectionInstance => {
+                const { html, css } = getSectionRenderables(sectionInstance);
+                allHTML += html;
+                allCSS += css;
+            });
+
+            const fontLinks = (state.customFonts || []).map(font => `    ${font.linkTag}`).join('\n');
+            const fontCSS = (state.customFonts || []).map(font => font.cssRule).join('\n\n');
+            
+            const fullHTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${state.projectName || 'Your Custom Page'}</title>
+${fontLinks}
+    <script src="https://unpkg.com/lucide@latest"><\/script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif; /* Default font */
+            background-color: ${state.canvasBackgroundColor};
+        }
+        ${fontCSS}
+        ${allCSS}
+    <\/style>
+</head>
+<body>
+
+${allHTML}
+
+    <script>
+        // This creates icons for sections that use them (like the WhatsApp button)
+        lucide.createIcons();
+    <\/script>
+</body>
+</html>`;
+
+            document.getElementById('full-code-output').textContent = fullHTML.trim();
+        }
+
+
+        function handleLibraryClick(event) {
+            const button = event.target.closest('button[data-action]');
+            if (!button) return;
+
+            const action = button.dataset.action;
+            const id = button.dataset.id;
+            const type = button.dataset.sectionType;
+
+            switch(action) {
+                case 'add-built-in': createSection(type); break;
+                case 'add-liquid': addLiquidSectionInstance(id); break;
+                case 'edit-liquid': showCustomCodeModal(id); break;
+                case 'delete-liquid': deleteLiquidSection(id); break;
+            }
+        }
+        
+        function handleCanvasClick(event) {
+            if (event.target.closest('a, button, input')) {
+                event.preventDefault();
+            }
+
+            const deleteButton = event.target.closest('.delete-btn');
+            if (deleteButton) {
+                const sectionEl = deleteButton.closest('.canvas-section');
+                const sectionIdToDelete = sectionEl.dataset.id;
+                
+                // OPTIMIZATION: Use direct DOM removal instead of full rerender
+                removeSectionFromDOM(sectionIdToDelete);
+                
+                state.pageSections = state.pageSections.filter(sec => sec.id !== sectionIdToDelete);
+                if (sectionIdToDelete === state.selectedElementId) {
+                    state.selectedElementId = null;
+                    renderSettings();
+                }
+                pushStateToHistory();
+                return;
+            }
+            
+            const duplicateButton = event.target.closest('.duplicate-btn');
+            if (duplicateButton) {
+                const sectionIdToDuplicate = duplicateButton.closest('.canvas-section').dataset.id;
+                const sectionIndex = state.pageSections.findIndex(sec => sec.id === sectionIdToDuplicate);
+                if (sectionIndex > -1) {
+                    const sectionToDuplicate = state.pageSections[sectionIndex];
+                    const newSection = JSON.parse(JSON.stringify(sectionToDuplicate));
+                    newSection.id = `instance-${Date.now()}`;
+                    state.pageSections.splice(sectionIndex + 1, 0, newSection);
+                    state.selectedElementId = newSection.id;
+                    
+                    // OPTIMIZATION: Use direct DOM addition instead of full rerender
+                    addSectionToDOM(newSection, sectionIdToDuplicate);
+
+                    renderSettings();
+                    pushStateToHistory();
+                }
+                return;
+            }
+            
+            state.selectedElementId = event.target.closest('.canvas-section')?.dataset.id || null;
+            renderSelectionOutline();
+            renderSettings();
+        }
+
+        function handleSettingsClick(event) {
+            const header = event.target.closest('.accordion-header');
+            if (header) {
+                header.parentElement.classList.toggle('open');
+            }
+
+            const copyButton = event.target.closest('.copy-btn');
+            if (copyButton) {
+                const targetId = copyButton.dataset.target;
+                const element = document.getElementById(targetId);
+                if (!element) return;
+
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = element.textContent;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempTextArea);
+                
+                copyButton.textContent = 'Copied!';
+                showNotification('Script copied to clipboard!');
+                setTimeout(() => { copyButton.innerHTML = 'Copy'; }, 2000);
+            }
+        }
+
+        function handlePreviewControls(event) {
+            const target = event.target.closest('.preview-btn');
+            if (!target) return;
+            const parent = target.parentElement;
+            parent.querySelectorAll('.preview-btn').forEach(btn => btn.classList.remove('active'));
+            target.classList.add('active');
+
+            if (target.dataset.view) {
+                previewWrapper.className = `flex-grow p-6 bg-transparent flex justify-center items-start overflow-y-auto custom-scrollbar ${target.dataset.view === 'mobile' ? 'preview-mobile' : 'preview-desktop'}`;
+            }
+        }
+        
+        function handleCopyCode(event) {
+            const button = event.target.closest('.copy-btn');
+            if (!button) return;
+            const targetId = button.dataset.target;
+            const element = document.getElementById(targetId);
+            if (!element) return;
+            
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = element.textContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+            
+            button.textContent = 'Copied!';
+            showNotification('Code copied to clipboard!');
+            setTimeout(() => { button.innerHTML = 'Copy'; }, 2000);
+        }
+        
+        function handleClearCanvas() {
+            showConfirm('Clear Canvas?', 'This will remove all sections from the canvas.', () => {
+                state.pageSections = [];
+                state.selectedElementId = null;
+                // OPTIMIZATION: Call renderEmptyCanvas directly
+                renderEmptyCanvas();
+                renderSettings();
+                pushStateToHistory();
+                showNotification('Canvas cleared.');
+            });
+        }
+
+        function handleBgColorChange(event) {
+            const newColor = event.target.value;
+            state.canvasBackgroundColor = newColor;
+            const iframeDoc = canvasFrame.contentDocument;
+            if (iframeDoc && iframeDoc.body) {
+                iframeDoc.body.style.backgroundColor = newColor;
+            }
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                pushStateToHistory();
+            }, 500);
+        }
+
+        function createSection(type) {
+            const component = components[type];
+            if (!component) return;
+            const id = `instance-${Date.now()}`;
+            const newSectionState = { ...component.initializer(), id, type };
+            if(!state.pageSections) state.pageSections = [];
+            
+            // OPTIMIZATION: Check if canvas is empty for special handling
+            const isFirstSection = state.pageSections.length === 0;
+            
+            state.pageSections.push(newSectionState);
+            state.selectedElementId = id; 
+            
+            if (isFirstSection) {
+                renderCanvas(true); // Do a full render for the first section
+            } else {
+                addSectionToDOM(newSectionState); // Fast DOM append for subsequent sections
+            }
+            
+            renderSettings();
+            pushStateToHistory();
+        }
+
+        function addLiquidSectionInstance(liquidMasterId) {
+            const masterSection = state.liquidSections.find(s => s.id === liquidMasterId);
+            if (!masterSection) return;
+
+            const schemaMatch = masterSection.fullCode.match(/{% schema %}([\s\S]*?){% endschema %}/);
+            const schema = JSON.parse(schemaMatch[1]);
+            const initialSettings = {};
+            (schema.settings || []).forEach(setting => {
+                initialSettings[setting.id] = setting.default;
+            });
+
+            const newInstance = {
+                id: `instance-${Date.now()}`,
+                type: 'liquid',
+                liquidSectionId: liquidMasterId,
+                settings: initialSettings
+            };
+
+            const isFirstSection = state.pageSections.length === 0;
+            if(!state.pageSections) state.pageSections = [];
+            state.pageSections.push(newInstance);
+            state.selectedElementId = newInstance.id;
+
+            if (isFirstSection) {
+                renderCanvas(true);
+            } else {
+                addSectionToDOM(newInstance);
+            }
+
+            renderSettings();
+            pushStateToHistory();
+        }
+
+        function deleteLiquidSection(idToDelete) {
+            const section = state.liquidSections.find(s => s.id === idToDelete);
+            showConfirm(`Delete "${section.name}"?`, 'This will permanently delete the section from your library and remove all of its copies from the canvas.', () => {
+                state.liquidSections = state.liquidSections.filter(s => s.id !== idToDelete);
+                state.pageSections = state.pageSections.filter(p => p.liquidSectionId !== idToDelete);
+
+                if (state.selectedElementId && !state.pageSections.find(p => p.id === state.selectedElementId)) {
+                    state.selectedElementId = null;
+                }
+
+                populateLibrary();
+                renderCanvas(true); // Full rerender is required here
+                renderSettings();
+                pushStateToHistory();
+                showNotification(`Section "${section.name}" deleted.`);
+            });
+        }
+        function getSectionRenderables(section) {
+            if (section.type === 'liquid') {
+                return renderLiquidSection(section);
+            }
+            const renderer = components[section.type]?.renderer;
+            return renderer ? renderer(section) : { html: '', css: '' };
+        }
+        
+        function updateSection(sectionId) {
+            const section = state.pageSections.find(s => s.id === sectionId);
+            if (!section) return;
+
+            const iframeDoc = canvasFrame.contentDocument;
+            if (!iframeDoc) return;
+
+            const { html, css } = getSectionRenderables(section);
+            
+            const sectionWrapper = iframeDoc.querySelector(`.canvas-section[data-id="${section.id}"]`);
+            if (sectionWrapper) {
+                sectionWrapper.innerHTML = `${html}<div class="section-controls"><button class="duplicate-btn" aria-label="Duplicate section"><i data-lucide="copy"></i></button><button class="delete-btn" aria-label="Delete section">&times;</button></div>`;
+                const newIcons = sectionWrapper.querySelectorAll('[data-lucide]');
+                if (newIcons.length > 0) {
+                   canvasFrame.contentWindow.lucide.createIcons({nodes: newIcons});
+                }
+            }
+
+            let styleTag = iframeDoc.head.querySelector(`style[data-style-id="${section.id}"]`);
+            if(styleTag) {
+                styleTag.textContent = css;
+            } else if (css) {
+                const newStyleTag = iframeDoc.createElement('style');
+                newStyleTag.setAttribute('data-style-id', section.id);
+                newStyleTag.textContent = css;
+                iframeDoc.head.appendChild(newStyleTag);
+            }
+        }
+
+        function renderSelectionOutline() {
+            const iframeDoc = canvasFrame.contentDocument;
+            if (!iframeDoc || !iframeDoc.body) return;
+            iframeDoc.querySelectorAll('.canvas-section.selected').forEach(el => el.classList.remove('selected'));
+            if (state.selectedElementId) {
+                const selectedEl = iframeDoc.querySelector(`.canvas-section[data-id="${state.selectedElementId}"]`);
+                selectedEl?.classList.add('selected');
+            }
+        }
+        
+        // --- Settings Panel Component Renderers ---
+        function renderWelcomeBarSettings(section, state) {
+            const fontOptions = getFontOptions(section.font_class);
+            return `
+                ${createAccordion('Content', `
+                    ${createTextInput('welcome_text', 'Welcome Text', section.welcome_text)}
+                `, true)}
+                ${createAccordion('Styling', `
+                    ${createSelectInput('font_class', 'Font Family', fontOptions, section.font_class)}
+                    ${createRangeInput('font_size', 'Font Size', section.font_size, 10, 72, 1, 'px')}
+                    ${createRangeInput('font_weight', 'Font Weight', section.font_weight, 100, 900, 100, '')}
+                    ${createColorInput('text_color', 'Text', section.text_color)}
+                `)}
+                ${createAccordion('Background', `
+                    ${createColorInput('background_color', 'Background Start', section.background_color)}
+                    ${createColorInput('background_color_end', 'Background End', section.background_color_end)}
+                    ${createRangeInput('background_angle', 'Gradient Angle', section.background_angle, 0, 360, 1, 'deg')}
+                `)}
+                ${createAccordion('Effects', `
+                            <h4 class="font-semibold text-blue-400 mb-2">Text Shadow</h4>
+                    ${createCheckbox('text_shadow_show', 'Enable Text Shadow', section.text_shadow_show)}
+                    ${createRangeInput('text_shadow_x', 'X Offset', section.text_shadow_x, -10, 10, 1, 'px')}
+                    ${createRangeInput('text_shadow_y', 'Y Offset', section.text_shadow_y, -10, 10, 1, 'px')}
+                    ${createRangeInput('text_shadow_blur', 'Blur', section.text_shadow_blur, 0, 20, 1, 'px')}
+                    ${createColorInput('text_shadow_color', 'Shadow Color', section.text_shadow_color)}
+                `)}
+                ${renderSpacingSettings(section)}`;
+        }
+
+        function renderProductPageSettings(section, state) {
+            const fontOptions = getFontOptions();
+            const borderStyleOptions = ['solid', 'dashed', 'dotted', 'double', 'groove', 'ridge'].map(s => `<option value="${s}" ${section.form_border_style === s ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('');
+            const imagePositionOptions = `
+                <option value="left" ${section.image_position === 'left' ? 'selected' : ''}>Left</option>
+                <option value="right" ${section.image_position === 'right' ? 'selected' : ''}>Right</option>
+            `;
+            const textDirectionOptions = `
+                <option value="ltr" ${section.form_text_direction === 'ltr' ? 'selected' : ''}>Left to Right</option>
+                <option value="rtl" ${section.form_text_direction === 'rtl' ? 'selected' : ''}>Right to Left</option>
+            `;
+            return `
+                ${createAccordion('Product Details', `
+                    ${createTextArea('image_urls', 'Image URLs (comma-separated)', section.image_urls)}
+                    ${createTextInput('title', 'Title', section.title)}
+                    ${createTextArea('description', 'Description', section.description)}
+                    ${createRangeInput('price', 'Price', section.price, 0, 10000, 1, section.currency)}
+                    ${createRangeInput('compare_at_price', 'Compare At Price', section.compare_at_price, 0, 10000, 1, section.currency)}
+                    ${createTextInput('currency', 'Currency', section.currency)}
+                `, true)}
+                ${createAccordion('Integrations & Tracking', `
+                    ${createTextInput('google_sheets_url', 'Google Sheets URL', section.google_sheets_url)}
+                    <div class="settings-group mb-4">
+                        <label class="block text-sm font-medium mb-1">Google Sheets Setup Script</label>
+                        <p class="text-xs text-gray-400 mb-2">In a Google Sheet, go to Extensions > Apps Script, paste this code, and deploy as a web app with access for "Anyone".</p>
+                        <div class="relative">
+                            <pre class="w-full p-2 border rounded-md font-mono text-xs bg-black/30 border-[var(--panel-border)] custom-scrollbar" style="max-height: 200px; overflow-y: auto;"><code id="google-script-code">${escapeHtml(GOOGLE_SHEET_SCRIPT_CONTENT)}</code></pre>
+                            <button class="copy-btn btn btn-muted py-1 px-3 text-sm" data-target="google-script-code">Copy</button>
+                        </div>
+                    </div>
+                    ${createTextArea('facebook_pixel_script', 'Facebook Pixel Code', section.facebook_pixel_script, `// Example: fbq('track', 'Purchase');`)}
+                    ${createTextArea('tiktok_pixel_script', 'TikTok Pixel Code', section.tiktok_pixel_script, `// Example: ttq.track('CompletePayment');`)}
+                `)}
+                ${createAccordion('Layout', `
+                    ${createSelectInput('image_position', 'Image Position (Desktop)', imagePositionOptions, section.image_position)}
+                `)}
+                ${createAccordion('Typography', `
+                    <h4 class="font-semibold text-blue-400 mb-2">Title</h4>
+                    ${createSelectInput('title_font_class', 'Font', fontOptions, section.title_font_class)}
+                    ${createRangeInput('title_font_size', 'Font Size', section.title_font_size, 20, 72, 1, 'px')}
+                    ${createRangeInput('title_font_weight', 'Font Weight', section.title_font_weight, 100, 900, 100, '')}
+                    <h4 class="font-semibold text-blue-400 mt-4 mb-2">Description</h4>
+                    ${createSelectInput('desc_font_class', 'Font', fontOptions, section.desc_font_class)}
+                    ${createRangeInput('desc_font_size', 'Font Size', section.desc_font_size, 12, 32, 1, 'px')}
+                    <h4 class="font-semibold text-blue-400 mt-4 mb-2">Price</h4>
+                    ${createSelectInput('price_font_class', 'Font', fontOptions, section.price_font_class)}
+                    <h4 class="font-semibold text-blue-400 mt-4 mb-2">Form Title</h4>
+                    ${createSelectInput('form_title_font_class', 'Font', fontOptions, section.form_title_font_class)}
+                    ${createRangeInput('form_title_font_size', 'Font Size', section.form_title_font_size, 16, 48, 1, 'px')}
+                    ${createRangeInput('form_title_font_weight', 'Font Weight', section.form_title_font_weight, 100, 900, 100, '')}
+                    ${createColorInput('form_title_color', 'Color', section.form_title_color)}
+                    <h4 class="font-semibold text-blue-400 mt-4 mb-2">Form Labels</h4>
+                    ${createSelectInput('form_labels_font_class', 'Font', fontOptions, section.form_labels_font_class)}
+                `)}
+                ${createAccordion('Order Form Content', `
+                    ${createTextInput('form_title', 'Form Title', section.form_title)}
+                    ${createTextInput('name_label', 'Name Field Label', section.name_label)}
+                    ${createTextInput('name_placeholder', 'Name Field Placeholder', section.name_placeholder)}
+                    ${createTextInput('phone_label', 'Phone Field Label', section.phone_label)}
+                    ${createTextInput('phone_placeholder', 'Phone Field Placeholder', section.phone_placeholder)}
+                    ${createTextInput('city_label', 'City Field Label', section.city_label)}
+                    ${createTextInput('city_placeholder', 'City Field Placeholder', section.city_placeholder)}
+                    ${createTextInput('submit_button_text', 'Submit Button Text', section.submit_button_text)}
+                `)}
+                ${createAccordion('Order Form Styling', `
+                    ${createSelectInput('form_text_direction', 'Text Direction', textDirectionOptions, section.form_text_direction)}
+                    ${createColorInput('form_bg_color', 'Form Background', section.form_bg_color)}
+                    <h4 class="font-semibold text-blue-400 mt-4 mb-2">Border</h4>
+                    ${createCheckbox('form_border_show', 'Show Border', section.form_border_show)}
+                    ${createRangeInput('form_border_width', 'Border Width', section.form_border_width, 0, 20, 1, 'px')}
+                    ${createSelectInput('form_border_style', 'Border Style', borderStyleOptions, section.form_border_style)}
+                    ${createColorInput('form_border_color', 'Border Color', section.form_border_color)}
+                    <h4 class="font-semibold text-blue-400 mt-4 mb-2">Shadow</h4>
+                    ${createCheckbox('form_shadow_show', 'Show Shadow', section.form_shadow_show)}
+                    ${createRangeInput('form_shadow_x', 'Shadow X Offset', section.form_shadow_x, -50, 50, 1, 'px')}
+                    ${createRangeInput('form_shadow_y', 'Shadow Y Offset', section.form_shadow_y, -50, 50, 1, 'px')}
+                    ${createRangeInput('form_shadow_blur', 'Shadow Blur', section.form_shadow_blur, 0, 100, 1, 'px')}
+                    ${createRangeInput('form_shadow_spread', 'Shadow Spread', section.form_shadow_spread, -50, 50, 1, 'px')}
+                    ${createColorInput('form_shadow_color', 'Shadow Color', section.form_shadow_color)}
+                    <h4 class="font-semibold text-blue-400 mt-4 mb-2">Confirm Button</h4>
+                    ${createColorInput('submit_button_bg_color', 'Button Background', section.submit_button_bg_color)}
+                    ${createColorInput('submit_button_text_color', 'Button Text Color', section.submit_button_text_color)}
+                `)}
+                ${createAccordion('WhatsApp Button', `
+                    ${createTextInput('whatsapp_number', 'WhatsApp Number', section.whatsapp_number)}
+                    ${createTextArea('whatsapp_initial_message', 'Initial Message', section.whatsapp_initial_message)}
+                    ${createTextInput('whatsapp_button_text', 'Button Text', section.whatsapp_button_text)}
+                `)}
+                ${createAccordion('Post-Submission Actions', `
+                    <h4 class="font-semibold text-blue-400 mb-2">"Thank You" Message</h4>
+                    ${createTextInput('thank_you_message_title', 'Modal Title', section.thank_you_message_title)}
+                    ${createTextArea('thank_you_message_body', 'Modal Body Text', section.thank_you_message_body)}
+                    <h4 class="font-semibold text-blue-400 mt-4 mb-2">Button Lockout</h4>
+                    ${createRangeInput('submit_button_lockout_time', 'Lockout Duration', section.submit_button_lockout_time, 0, 60, 1, 's')}
+                `)}
+                ${createAccordion('General Styling', `
+                    ${createColorInput('background_color', 'Section Background', section.background_color)}
+                    ${createColorInput('text_color', 'Main Text Color', section.text_color)}
+                    ${createColorInput('price_color', 'Price Color', section.price_color)}
+                    ${createColorInput('button_bg_color', 'WhatsApp Button BG', section.button_bg_color)}
+                    ${createColorInput('button_text_color', 'WhatsApp Button Text', section.button_text_color)}
+                `)}
+                ${renderSpacingSettings(section)}
+            `;
+        }
+
+        function renderLiquidSectionSettings(section) {
+            const masterSection = state.liquidSections.find(s => s.id === section.liquidSectionId);
+            if (!masterSection) return '<p>Error: Could not find master section.</p>';
+            
+            const schemaMatch = masterSection.fullCode.match(/{% schema %}([\s\S]*?){% endschema %}/);
+            const schema = JSON.parse(schemaMatch[1]);
+
+            const settingsHtml = (schema.settings || []).map(setting => {
+                const value = section.settings[setting.id];
+                switch(setting.type) {
+                    case 'header': return `<h4 class="font-semibold text-lg text-blue-400 mt-4 mb-2 -mx-2">${setting.content}</h4>`;
+                    case 'url':
+                    case 'text': return createTextInput(setting.id, setting.label, value);
+                    case 'color': return createColorInput(setting.id, setting.label, value);
+                    case 'range': return createRangeInput(setting.id, setting.label, value, setting.min, setting.max, setting.step, setting.unit);
+                    case 'checkbox': return createCheckbox(setting.id, setting.label, value);
+                    case 'select':
+                        const options = setting.options.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('');
+                        return createSelectInput(setting.id, setting.label, options, value);
+                    default: return `<p>Unsupported setting type: ${setting.type}</p>`;
+                }
+            }).join('');
+            return createAccordion(schema.name || "Liquid Section Settings", settingsHtml, true);
+        }
+
+        function renderSpacingSettings(section) {
+            return createAccordion('Spacing & Sizing', `
+                <h4 class="font-semibold text-blue-400 mb-2">Mobile Padding</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    ${createRangeInput('padding_top', 'Top', section.padding_top, 0, 50, 1, 'px')}
+                    ${createRangeInput('padding_right', 'Right', section.padding_right, 0, 50, 1, 'px')}
+                    ${createRangeInput('padding_bottom', 'Bottom', section.padding_bottom, 0, 50, 1, 'px')}
+                    ${createRangeInput('padding_left', 'Left', section.padding_left, 0, 50, 1, 'px')}
+                </div>
+                <h4 class="font-semibold text-blue-400 mt-4 mb-2">Mobile Margin</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    ${createRangeInput('margin_top', 'Top', section.margin_top, 0, 50, 1, 'px')}
+                    ${createRangeInput('margin_right', 'Right', section.margin_right, 0, 50, 1, 'px')}
+                    ${createRangeInput('margin_bottom', 'Bottom', section.margin_bottom, 0, 50, 1, 'px')}
+                    ${createRangeInput('margin_left', 'Left', section.margin_left, 0, 50, 1, 'px')}
+                </div>
+                <h4 class="font-semibold text-blue-400 mt-4 mb-2">Desktop Padding</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    ${createRangeInput('desktop_padding_top', 'Top', section.desktop_padding_top, 0, 100, 1, 'px')}
+                    ${createRangeInput('desktop_padding_right', 'Right', section.desktop_padding_right, 0, 100, 1, 'px')}
+                    ${createRangeInput('desktop_padding_bottom', 'Bottom', section.desktop_padding_bottom, 0, 100, 1, 'px')}
+                    ${createRangeInput('desktop_padding_left', 'Left', section.desktop_padding_left, 0, 100, 1, 'px')}
+                </div>
+                <h4 class="font-semibold text-blue-400 mt-4 mb-2">Desktop Margin</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    ${createRangeInput('desktop_margin_top', 'Top', section.desktop_margin_top, 0, 100, 1, 'px')}
+                    ${createRangeInput('desktop_margin_right', 'Right', section.desktop_margin_right, 0, 100, 1, 'px')}
+                    ${createRangeInput('desktop_margin_bottom', 'Bottom', section.desktop_margin_bottom, 0, 100, 1, 'px')}
+                    ${createRangeInput('desktop_margin_left', 'Left', section.desktop_margin_left, 0, 100, 1, 'px')}
+                </div>
+            `);
+        }
+        
+        // --- Settings Panel Helper Functions ---
+        function createTextInput(setting, label, value) { return `<div class="settings-group mb-4"><label class="block text-sm font-medium mb-1">${label}</label><input type="text" data-setting="${setting}" value="${value || ''}" class="w-full p-2 border rounded-md bg-transparent border-[var(--panel-border)] focus:border-indigo-400 focus:ring-0"></div>`; }
+        function createTextArea(setting, label, value, placeholder = '') { return `<div class="settings-group mb-4"><label class="block text-sm font-medium mb-1">${label}</label><textarea data-setting="${setting}" rows="4" class="w-full p-2 border rounded-md bg-transparent border-[var(--panel-border)] focus:border-indigo-400 focus:ring-0 custom-scrollbar" placeholder="${placeholder}">${value || ''}</textarea></div>`; }
+        function createColorInput(setting, label, value) { return `<div class="settings-group mb-4"><label class="block text-sm font-medium mb-1">${label}</label><input type="color" data-setting="${setting}" value="${value}" class="w-full h-10 p-1 border rounded-md border-[var(--panel-border)] bg-transparent"></div>`; }
+        function createRangeInput(setting, label, value, min = 0, max = 100, step = 1, unit = '') { 
+            return `
+                <div class="settings-group mb-4">
+                    <label class="block text-sm font-medium mb-1">${label} (${value}${unit || ''})</label>
+                    <div class="flex items-center gap-2">
+                        <input type="range" data-setting="${setting}" value="${value}" min="${min}" max="${max}" step="${step}" data-unit="${unit || ''}" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                        <input type="number" data-setting="${setting}" value="${value}" min="${min}" max="${max}" step="${step}" class="w-20 p-1 border rounded-md bg-transparent border-[var(--panel-border)] text-center">
+                    </div>
+                </div>
+            `;
+        }
+        function createSelectInput(setting, label, options, selectedValue) { return `<div class="settings-group mb-4"><label class="block text-sm font-medium mb-1">${label}</label><select data-setting="${setting}" class="w-full p-2 border rounded-md bg-transparent border-[var(--panel-border)] focus:border-indigo-400 focus:ring-0">${options.replace(`value="${selectedValue}"`, `value="${selectedValue}" selected`)}</select></div>`; }
+        function createCheckbox(setting, label, checked) { return `<div class="settings-group mb-4 flex items-center"><input type="checkbox" data-setting="${setting}" ${checked ? 'checked' : ''} class="h-4 w-4 text-indigo-500 bg-transparent border-gray-600 rounded focus:ring-indigo-500"><label class="ml-2 block text-sm">${label}</label></div>`;}
+        function createAccordion(title, content, isOpen = false) {
+            return `
+                <div class="accordion-item border-b border-[var(--panel-border)] py-2 ${isOpen ? 'open' : ''}">
+                    <div class="accordion-header flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-blue-400">${title}</h3>
+                        <i data-lucide="chevron-right" class="accordion-icon"></i>
+                    </div>
+                    <div class="accordion-content pt-3">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        }
+        function getFontOptions(selectedValue) {
+            return '<option value="">Theme Default</option>' + (state.customFonts || []).map(font => `<option value="${font.name.replace(/\s+/g, '-').toLowerCase()}" ${selectedValue === font.name.replace(/\s+/g, '-').toLowerCase() ? 'selected' : ''}>${font.name}</option>`).join('');
+        }
+        function escapeHtml(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+        
+        function parseVideoUrl(url) {
+            if (!url) return null;
+            let match;
+
+            // YouTube patterns
+            const youtubePatterns = [
+                /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})/,
+            ];
+            for (const pattern of youtubePatterns) {
+                match = url.match(pattern);
+                if (match && match[1]) {
+                    return { platform: 'youtube', id: match[1] };
+                }
+            }
+
+            // Vimeo patterns
+            const vimeoPatterns = [
+                /(?:https?:\/\/)?(?:www\.)?(?:vimeo\.com)\/(\d+)/,
+                /(?:https?:\/\/)?(?:player\.vimeo\.com)\/video\/(\d+)/
+            ];
+            for (const pattern of vimeoPatterns) {
+                match = url.match(pattern);
+                if (match && match[1]) {
+                    return { platform: 'vimeo', id: match[1] };
+                }
+            }
+
+            return null;
+        }
+
+
+        // --- OPTIMIZATION: Faster DOM manipulation functions ---
+        function addSectionToDOM(section, afterSectionId = null) {
+            const iframeDoc = canvasFrame.contentDocument;
+            if (!iframeDoc || !iframeDoc.body) return;
+
+            // 1. Create Style Tag
+            const { html, css } = getSectionRenderables(section);
+            const newStyleTag = iframeDoc.createElement('style');
+            newStyleTag.setAttribute('data-style-id', section.id);
+            newStyleTag.textContent = css;
+            iframeDoc.head.appendChild(newStyleTag);
+
+            // 2. Create Section Element
+            const tempDiv = iframeDoc.createElement('div');
+            tempDiv.innerHTML = `<div class="canvas-section" data-id="${section.id}" draggable="true">${html}<div class="section-controls"><button class="duplicate-btn" aria-label="Duplicate section"><i data-lucide="copy" class="h-4 w-4"></i></button><button class="delete-btn" aria-label="Delete section">&times;</button></div></div>`;
+            const newSectionEl = tempDiv.firstElementChild;
+
+            // 3. Insert into DOM
+            if (afterSectionId) {
+                const siblingEl = iframeDoc.querySelector(`.canvas-section[data-id="${afterSectionId}"]`);
+                if (siblingEl && siblingEl.nextSibling) {
+                    iframeDoc.body.insertBefore(newSectionEl, siblingEl.nextSibling);
+                } else {
+                    iframeDoc.body.appendChild(newSectionEl);
+                }
+            } else {
+                 iframeDoc.body.appendChild(newSectionEl);
+            }
+            
+            // 4. Render icons and selection
+            const newIcons = newSectionEl.querySelectorAll('[data-lucide]');
+            if (newIcons.length > 0) {
+                canvasFrame.contentWindow.lucide.createIcons({ nodes: newIcons });
+            }
+            renderSelectionOutline();
+        }
+
+        function removeSectionFromDOM(sectionId) {
+            const iframeDoc = canvasFrame.contentDocument;
+            if (!iframeDoc) return;
+            const sectionEl = iframeDoc.querySelector(`.canvas-section[data-id="${sectionId}"]`);
+            const styleEl = iframeDoc.head.querySelector(`style[data-style-id="${sectionId}"]`);
+            if (sectionEl) sectionEl.remove();
+            if (styleEl) styleEl.remove();
+        }
+
+        function initDragAndDrop(container) {
+            let draggedElement = null;
+            container.addEventListener('dragstart', e => {
+                const target = e.target.closest('.canvas-section');
+                if (!target) return;
+                draggedElement = target;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', target.dataset.id);
+                setTimeout(() => target.classList.add('dragging'), 0);
+            });
+            container.addEventListener('dragend', () => {
+                if (draggedElement) draggedElement.classList.remove('dragging');
+                draggedElement = null;
+                container.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => el.classList.remove('drag-over-top', 'drag-over-bottom'));
+            });
+            container.addEventListener('dragover', e => {
+                e.preventDefault();
+                const target = e.target.closest('.canvas-section');
+                container.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => el.classList.remove('drag-over-top', 'drag-over-bottom'));
+                if (target && target !== draggedElement) {
+                    const rect = target.getBoundingClientRect();
+                    const isAfter = e.clientY > rect.top + rect.height / 2;
+                    target.classList.toggle('drag-over-bottom', isAfter);
+                    target.classList.toggle('drag-over-top', !isAfter);
+                }
+            });
+            container.addEventListener('drop', e => {
+                e.preventDefault();
+                const draggedId = e.dataTransfer.getData('text/plain');
+                if (!draggedId) return;
+
+                const iframeDoc = canvasFrame.contentDocument;
+                const droppedOnElement = e.target.closest('.canvas-section');
+
+                // Update state first
+                const draggedIndex = state.pageSections.findIndex(s => s.id === draggedId);
+                let targetIndex;
+
+                if (droppedOnElement) {
+                    const rect = droppedOnElement.getBoundingClientRect();
+                    const isAfter = e.clientY > rect.top + rect.height / 2;
+                    targetIndex = state.pageSections.findIndex(s => s.id === droppedOnElement.dataset.id);
+                    if (isAfter) targetIndex++;
+                } else {
+                    targetIndex = state.pageSections.length;
+                }
+
+                if (draggedIndex < targetIndex) targetIndex--;
+                
+                const [draggedItem] = state.pageSections.splice(draggedIndex, 1);
+                state.pageSections.splice(targetIndex, 0, draggedItem);
+                
+                // OPTIMIZATION: Now update the DOM based on the new state order, without a full reload.
+                const draggedEl = iframeDoc.querySelector(`.canvas-section[data-id="${draggedId}"]`);
+                const draggedStyle = iframeDoc.head.querySelector(`style[data-style-id="${draggedId}"]`);
+                
+                // Find the new sibling to insert before
+                const newSiblingState = state.pageSections[targetIndex + 1];
+                const newSiblingEl = newSiblingState ? iframeDoc.querySelector(`.canvas-section[data-id="${newSiblingState.id}"]`) : null;
+
+                if (draggedEl && draggedStyle) {
+                    iframeDoc.body.insertBefore(draggedEl, newSiblingEl);
+                    iframeDoc.head.insertBefore(draggedStyle, iframeDoc.head.querySelector(`style[data-style-id="${newSiblingState?.id}"]`));
+                }
+                
+                if(droppedOnElement) droppedOnElement.classList.remove('drag-over-top', 'drag-over-bottom');
+
+                pushStateToHistory();
+            });
+        }
+        // --- Utility & Modal Functions ---
+        function setupModal(modalId, openBtnOrSelector, onOpenCallback) {
+            const modal = document.getElementById(modalId);
+            const openBtn = typeof openBtnOrSelector === 'string' ? document.querySelector(openBtnOrSelector) : openBtnOrSelector;
+            if (!modal || !openBtn) return;
+            const closeBtn = modal.querySelector('.modal-close-btn');
+            const closeModal = () => {
+                modal.classList.add('hidden');
+                document.removeEventListener('keydown', handleKeyDown);
+            };
+            const handleKeyDown = (event) => { if (event.key === 'Escape') closeModal(); };
+            openBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (onOpenCallback) onOpenCallback();
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.addEventListener('keydown', handleKeyDown);
+            });
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(); });
+        }
+        
+        function showCustomCodeModal(idToEdit = null) {
+            editingLiquidSectionId = idToEdit;
+            if (idToEdit) {
+                const section = state.liquidSections.find(s => s.id === idToEdit);
+                customCodeModalTitle.textContent = `Edit "${section.name}"`;
+                addCustomCodeConfirmBtn.textContent = 'Update Section';
+                liquidCodeInput.value = section.fullCode;
+            } else {
+                customCodeModalTitle.textContent = 'Add New Liquid Section';
+                addCustomCodeConfirmBtn.textContent = 'Save Section';
+                liquidCodeInput.value = `{% schema %}
+{
+  "name": "New Section",
+  "settings": []
+}
+{% endschema %}
+
+<div>
+  <!-- Your HTML here -->
+</div>
+`;
+            }
+            validateLiquidCode(liquidCodeInput.value); // Validate on open
+            customCodeModal.classList.remove('hidden');
+            customCodeModal.classList.add('flex');
+        }
+
+        function showConfirm(title, message, onOk) {
+            const modal = document.getElementById('confirm-modal');
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            const okBtn = document.getElementById('confirm-ok-btn');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+            
+            const newOkBtn = okBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+
+            const handleOk = () => {
+                onOk();
+                close();
+            };
+            const handleCancel = () => close();
+
+            function close() {
+                modal.classList.add('hidden');
+                newOkBtn.removeEventListener('click', handleOk);
+                cancelBtn.removeEventListener('click', handleCancel);
+            }
+            
+            newOkBtn.addEventListener('click', handleOk);
+            cancelBtn.addEventListener('click', handleCancel);
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        
+        function showNotification(message, isError = false) {
+            notificationToast.textContent = message;
+            notificationToast.classList.remove('bg-red-500', 'bg-green-500', 'opacity-0', 'translate-y-10');
+            notificationToast.classList.add(isError ? 'bg-red-500' : 'bg-green-500');
+            setTimeout(() => {
+                notificationToast.classList.remove('opacity-0', 'translate-y-10');
+                notificationToast.classList.add('opacity-100', 'translate-y-0');
+            }, 50);
+            setTimeout(() => {
+                notificationToast.classList.remove('opacity-100', 'translate-y-0');
+                notificationToast.classList.add('opacity-0', 'translate-y-10');
+            }, 3000);
+        }
+
+        // --- Liquid Section Logic ---
+        function validateLiquidCode(fullCode) {
+            let errors = [];
+            const schemaMatch = fullCode.match(/{% schema %}([\s\S]*?){% endschema %}/);
+
+            if (!schemaMatch) {
+                errors.push('Code must contain a `{% schema %}` and `{% endschema %}` block.');
+            } else {
+                try {
+                    JSON.parse(schemaMatch[1]);
+                } catch (e) {
+                    errors.push(`Invalid JSON in schema: ${e.message}`);
+                }
+            }
+
+            const unsupportedTags = fullCode.match(/{%\s*(if|assign|liquid|for|case)[\s\S]*?%}/g) || [];
+            const unsupportedFilters = fullCode.match(/\|\s*\w+/g) || [];
+            
+            if (unsupportedTags.length > 0) {
+                 errors.push(`<b>Warning:</b> This builder has limited Liquid support. The following logic tags may not work as expected: <code>${[...new Set(unsupportedTags)].join(', ')}</code>.`);
+            }
+            if (unsupportedFilters.length > 0) {
+                errors.push(`<b>Warning:</b> Liquid filters are not supported and may not work. Found: <code>${[...new Set(unsupportedFilters)].join(', ')}</code>.`);
+            }
+
+            if (errors.length > 0) {
+                liquidCodeErrorPanel.innerHTML = errors.join('<br><br>');
+                liquidCodeErrorPanel.classList.remove('hidden');
+                return false;
+            } else {
+                liquidCodeErrorPanel.classList.add('hidden');
+                return true;
+            }
+        }
+
+        function renderLiquidSection(section) {
+            const masterSection = state.liquidSections.find(s => s.id === section.liquidSectionId);
+            if (!masterSection) return { html: '<p>Error: Master section not found.</p>', css: '' };
+
+            const { fullCode } = masterSection;
+            let renderedCode = fullCode;
+
+            // Strip schema and liquid logic tags for rendering
+            renderedCode = renderedCode.replace(/{% schema %}([\s\S]*?){% endschema %}/, '');
+            renderedCode = renderedCode.replace(/{%\s*(if|assign|liquid|for|case|comment)[\s\S]*?%}/g, '');
+
+            // Replace setting placeholders
+            for (const [key, value] of Object.entries(section.settings)) {
+                const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+                renderedCode = renderedCode.replace(regex, value);
+            }
+            
+            const styleMatch = renderedCode.match(/<style>([\s\S]*?)<\/style>/);
+            const css = styleMatch ? styleMatch[1] : '';
+            const html = renderedCode.replace(/<style>([\s\S]*?)<\/style>/, '');
+
+            return { html, css };
+        }
+
+        // --- Built-in Component Logic ---
+        function initializeWelcomeBar() { 
+            return { 
+                welcome_text: "Welcome to our online store!", 
+                font_class: "", 
+                font_size: 20, 
+                font_weight: 400,
+                text_color: "#ffffff", 
+                background_color: "#3b82f6",
+                background_color_end: "#6366f1",
+                background_angle: 90,
+                text_shadow_show: true,
+                text_shadow_x: 1,
+                text_shadow_y: 1,
+                text_shadow_blur: 3,
+                text_shadow_color: 'rgba(0,0,0,0.3)',
+                padding_top: 10, padding_right: 15, padding_bottom: 10, padding_left: 15, 
+                margin_top: 10, margin_right: 10, margin_bottom: 10, margin_left: 10,
+                desktop_padding_top: 15, desktop_padding_right: 20, desktop_padding_bottom: 15, desktop_padding_left: 20,
+                desktop_margin_top: 20, desktop_margin_right: 20, desktop_margin_bottom: 20, desktop_margin_left: 20
+            }; 
+        }
+
+        function renderWelcomeBar(state) { 
+            const id = state.id;
+            const text = state.welcome_text; 
+            const background = `linear-gradient(${state.background_angle}deg, ${state.background_color}, ${state.background_color_end})`;
+            const textShadow = state.text_shadow_show ? `${state.text_shadow_x}px ${state.text_shadow_y}px ${state.text_shadow_blur}px ${state.text_shadow_color}` : 'none';
+
+            const html = `<div class="welcome-bar ${state.font_class}" id="${id}">${text}</div>`; 
+            const css = `
+                @keyframes slideInDown {
+                    from { transform: translateY(-100%); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                #${id} {
+                    background: ${background};
+                    color:${state.text_color};
+                    font-size:${state.font_size}px; 
+                    font-weight:${state.font_weight};
+                    text-shadow: ${textShadow};
+                    padding:${state.padding_top}px ${state.padding_right}px ${state.padding_bottom}px ${state.padding_left}px;
+                    margin:${state.margin_top}px ${state.margin_right}px ${state.margin_bottom}px ${state.margin_left}px;
+                    text-align:center;
+                    animation: slideInDown 0.5s ease-out forwards;
+                    border-radius: 0.5rem;
+                }
+                @media (min-width: 768px) {
+                    #${id} {
+                        padding: ${state.desktop_padding_top}px ${state.desktop_padding_right}px ${state.desktop_padding_bottom}px ${state.desktop_padding_left}px;
+                        margin: ${state.desktop_margin_top}px ${state.desktop_margin_right}px ${state.desktop_margin_bottom}px ${state.desktop_margin_left}px;
+                    }
+                }`; 
+            return { html, css }; 
+        }
+
+        function initializeProductPage() {
+            return {
+                image_urls: "https://placehold.co/600x600/6366f1/ffffff?text=Image+1,https://placehold.co/600x600/22c55e/ffffff?text=Image+2,https://placehold.co/600x600/ef4444/ffffff?text=Image+3",
+                title: "High-Quality Product",
+                description: "A brief, compelling description of this amazing product and its key features.",
+                price: 249,
+                compare_at_price: 399,
+                currency: "MAD",
+                image_position: 'left', // 'left' or 'right'
+                title_font_size: 32,
+                title_font_weight: 700,
+                desc_font_size: 16,
+                title_font_class: '',
+                desc_font_class: '',
+                price_font_class: '',
+                form_title_font_class: '',
+                form_labels_font_class: '',
+                form_title_font_size: 24,
+                form_title_font_weight: 600,
+                form_title_color: '#ffffff',
+                form_text_direction: 'ltr',
+                google_sheets_url: '',
+                facebook_pixel_script: '',
+                tiktok_pixel_script: '',
+                form_title: "Order Now",
+                name_label: "Full Name",
+                name_placeholder: "Enter your full name",
+                phone_label: "Phone Number",
+                phone_placeholder: "e.g., 0612345678",
+                city_label: "City",
+                city_placeholder: "Enter your city",
+                submit_button_text: "Confirm Order",
+                submit_button_bg_color: '#6366f1',
+                submit_button_text_color: '#ffffff',
+                submit_button_lockout_time: 10,
+                thank_you_message_title: 'Thank You!',
+                thank_you_message_body: 'Your order has been submitted successfully. We will contact you shortly.',
+                whatsapp_number: "212600000000",
+                whatsapp_initial_message: 'I am interested in this product:',
+                whatsapp_button_text: "Contact us on WhatsApp",
+                background_color: "#1a1a4e",
+                text_color: "#e0e0e0",
+                price_color: "#22c55e",
+                button_bg_color: "#25D366",
+                button_text_color: "#ffffff",
+                form_bg_color: "rgba(26, 26, 78, 0.7)",
+                form_border_show: true,
+                form_border_width: 1,
+                form_border_style: 'solid',
+                form_border_color: 'rgba(255, 255, 255, 0.2)',
+                form_shadow_show: true,
+                form_shadow_x: 0,
+                form_shadow_y: 4,
+                form_shadow_blur: 15,
+                form_shadow_spread: 0,
+                form_shadow_color: 'rgba(0, 0, 0, 0.3)',
+                padding_top: 15, padding_right: 15, padding_bottom: 15, padding_left: 15,
+                margin_top: 10, margin_right: 10, margin_bottom: 10, margin_left: 10,
+                desktop_padding_top: 30, desktop_padding_right: 30, desktop_padding_bottom: 30, desktop_padding_left: 30,
+                desktop_margin_top: 20, desktop_margin_right: 20, desktop_margin_bottom: 20, desktop_margin_left: 20
+            };
+        }
+
+        function renderProductPage(state) {
+            const id = state.id;
+            const imageUrls = (state.image_urls || '').split(/[\s,]+/).map(url => url.trim()).filter(url => url);
+            const mainImage = imageUrls[0] || 'https://placehold.co/600x600/cccccc/ffffff?text=No+Image';
+            
+            const thumbnailsHtml = imageUrls.length > 1 ? `
+                <div class="product-thumbnails">
+                    ${imageUrls.map((url, index) => `<img src="${url}" alt="Thumbnail ${index + 1}" class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeImage(this, '${url}')">`).join('')}
+                </div>
+            ` : '';
+
+            const compareAtPriceHtml = state.compare_at_price > state.price ? `<span class="product-compare-price ${state.price_font_class}">${state.compare_at_price} ${state.currency}</span>` : '';
+
+            const html = `
+                <div class="product-page-container" id="${id}" data-image-position="${state.image_position}">
+                    <div class="product-gallery">
+                        <div class="product-main-image">
+                            <img id="main-product-image-${id}" src="${mainImage}" alt="${state.title}" onerror="this.src='https://placehold.co/600x600/cccccc/ffffff?text=Image+Error';">
+                        </div>
+                        ${thumbnailsHtml}
+                    </div>
+                    <div class="product-details">
+                        <h1 class="product-title ${state.title_font_class}">${state.title}</h1>
+                        <p class="product-description ${state.desc_font_class}">${state.description}</p>
+                        <div class="product-price-container">
+                            <span class="product-price ${state.price_font_class}">${state.price} ${state.currency}</span>
+                            ${compareAtPriceHtml}
+                        </div>
+                        <div class="product-actions">
+                            <button type="button" class="whatsapp-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                <span>${state.whatsapp_button_text}</span>
+                            </button>
+                        </div>
+                        <form class="order-form" dir="${state.form_text_direction}">
+                            <h3 class="form-title ${state.form_title_font_class}">${state.form_title}</h3>
+                            <div id="form-status-${id}" class="form-status"></div>
+                            <div class="form-fields">
+                                <div class="form-group">
+                                    <label for="${id}-name" class="${state.form_labels_font_class}">${state.name_label}</label>
+                                    <input type="text" id="${id}-name" name="name" placeholder="${state.name_placeholder}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="${id}-phone" class="${state.form_labels_font_class}">${state.phone_label}</label>
+                                    <input type="tel" id="${id}-phone" name="phone" placeholder="${state.phone_placeholder}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="${id}-city" class="${state.form_labels_font_class}">${state.city_label}</label>
+                                    <input type="text" id="${id}-city" name="city" placeholder="${state.city_placeholder}" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="submit-btn" disabled>${state.submit_button_text}</button>
+                        </form>
+                    </div>
+
+                    <div id="thank-you-modal-${id}" class="thank-you-modal-overlay" style="display: none;">
+                        <div class="thank-you-modal-content">
+                            <button id="thank-you-modal-close-${id}" class="thank-you-modal-close">&times;</button>
+                            <h2 id="thank-you-title-${id}">${state.thank_you_message_title}</h2>
+                            <p id="thank-you-body-${id}">${state.thank_you_message_body}</p>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                try {
+                    const container = document.getElementById('${id}');
+                    if (container) {
+                        const form = container.querySelector('.order-form');
+                        const submitBtn = form.querySelector('.submit-btn');
+                        const whatsappBtn = container.querySelector('.whatsapp-btn');
+                        const thankYouModal = document.getElementById('thank-you-modal-${id}');
+                        const thankYouModalClose = document.getElementById('thank-you-modal-close-${id}');
+
+                        const nameInput = form.querySelector('#${id}-name');
+                        const phoneInput = form.querySelector('#${id}-phone');
+                        const cityInput = form.querySelector('#${id}-city');
+                        const allInputs = [nameInput, phoneInput, cityInput];
+
+                        const validateForm = () => {
+                            const allValid = allInputs.every(input => input.value.trim() !== '');
+                            if (allValid) {
+                                if (submitBtn.dataset.locked !== 'true') {
+                                    submitBtn.disabled = false;
+                                }
+                            } else {
+                                submitBtn.disabled = true;
+                            }
+                        };
+
+                        allInputs.forEach(input => input.addEventListener('input', validateForm));
+                        
+                        thankYouModalClose.addEventListener('click', () => {
+                            thankYouModal.style.display = 'none';
+                        });
+                        
+                        whatsappBtn.addEventListener('click', () => {
+                            const name = nameInput.value;
+                            const phone = phoneInput.value;
+                            const city = cityInput.value;
+                            let message = `
+                                ${state.whatsapp_initial_message}
+                                Product: ${state.title}
+                                Price: ${state.price} ${state.currency}
+                                --- Order Details ---
+                                Name: ${name || 'N/A'}
+                                Phone: ${phone || 'N/A'}
+                                City: ${city || 'N/A'}
+                            `.trim().replace(/^\s+/gm, "");
+                            const url = `https://wa.me/${state.whatsapp_number}?text=${encodeURIComponent(message)}`;
+                            window.open(url, '_blank');
+                        });
+
+                        form.addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            if (submitBtn.disabled) return;
+
+                            submitBtn.disabled = true;
+                            submitBtn.dataset.locked = 'true';
+                            submitBtn.textContent = 'Submitting...';
+
+                            const formData = new FormData(form);
+                            const googleSheetsUrl = "${state.google_sheets_url}";
+                            
+                            const onComplete = () => {
+                                thankYouModal.style.display = 'flex';
+                                form.reset();
+                                submitBtn.textContent = 'Order Placed!';
+
+                                setTimeout(() => {
+                                    submitBtn.dataset.locked = 'false';
+                                    submitBtn.textContent = '${state.submit_button_text}';
+                                    validateForm(); // This will correctly disable the button again
+                                }, ${state.submit_button_lockout_time * 1000});
+
+                                try { ${state.facebook_pixel_script || ''} } catch (e) { console.error('FB Pixel Error:', e); }
+                                try { ${state.tiktok_pixel_script || ''} } catch (e) { console.error('TT Pixel Error:', e); }
+                            };
+                            
+                            if (googleSheetsUrl && googleSheetsUrl.startsWith('http')) {
+                                const urlWithParams = new URL(googleSheetsUrl);
+                                urlWithParams.searchParams.append('name', formData.get('name'));
+                                urlWithParams.searchParams.append('phone', formData.get('phone'));
+                                urlWithParams.searchParams.append('city', formData.get('city'));
+                                urlWithParams.searchParams.append('product', '${state.title}');
+                                urlWithParams.searchParams.append('price', '${state.price} ${state.currency}');
+
+                                fetch(urlWithParams, { method: 'GET', mode: 'no-cors' })
+                                    .finally(onComplete);
+                            } else {
+                                console.log('No Google Sheets URL provided or invalid URL. Simulating success.');
+                                setTimeout(onComplete, 500);
+                            }
+                        });
+
+                        validateForm(); // Initial validation check
+                    }
+                } catch (e) {
+                    console.error("Error in section script for ID ${id}:", e);
+                }
+
+                function changeImage(thumbElement, newSrc) {
+                    const mainImage = document.getElementById('main-product-image-${id}');
+                    mainImage.style.opacity = 0;
+                    setTimeout(() => {
+                        mainImage.src = newSrc;
+                        mainImage.style.opacity = 1;
+                    }, 200);
+                    const thumbnails = thumbElement.parentElement.querySelectorAll('.thumbnail');
+                    thumbnails.forEach(t => t.classList.remove('active'));
+                    thumbElement.classList.add('active');
+                }
+                <\/script>
+            `;
+            const formBorder = state.form_border_show ? `${state.form_border_width}px ${state.form_border_style} ${state.form_border_color}` : 'none';
+            const formShadow = state.form_shadow_show ? `${state.form_shadow_x}px ${state.form_shadow_y}px ${state.form_shadow_blur}px ${state.form_shadow_spread}px ${state.form_shadow_color}` : 'none';
+
+            const css = `
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes fadeInModal {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes scaleInModal {
+                    from { transform: scale(0.9); }
+                    to { transform: scale(1); }
+                }
+                #${id} {
+                    background-color: ${state.background_color};
+                    color: ${state.text_color};
+                    padding: ${state.padding_top}px ${state.padding_right}px ${state.padding_bottom}px ${state.padding_left}px;
+                    margin: ${state.margin_top}px ${state.margin_right}px ${state.margin_bottom}px ${state.margin_left}px;
+                    display: grid;
+                    grid-template-columns: 1fr;
+                    gap: 20px;
+                    animation: fadeIn 0.6s ease-out forwards;
+                }
+                #${id} .product-main-image img {
+                    width: 100%;
+                    height: auto;
+                    border-radius: 0.5rem;
+                    aspect-ratio: 1 / 1;
+                    object-fit: cover;
+                    transition: opacity 0.2s ease-in-out;
+                }
+                #${id} .product-thumbnails {
+                    display: grid;
+                    grid-template-columns: repeat(5, 1fr);
+                    gap: 10px;
+                    margin-top: 10px;
+                }
+                #${id} .product-thumbnails .thumbnail {
+                    width: 100%;
+                    border-radius: 0.375rem;
+                    cursor: pointer;
+                    opacity: 0.6;
+                    transition: all 0.2s;
+                    border: 2px solid transparent;
+                }
+                #${id} .product-thumbnails .thumbnail:hover, #${id} .product-thumbnails .thumbnail.active {
+                    opacity: 1;
+                    border-color: var(--interactive-primary, #6366f1);
+                    transform: scale(1.05);
+                }
+                #${id} .product-title { 
+                    font-size: ${state.title_font_size * 0.8}px;
+                    font-weight: ${state.title_font_weight};
+                }
+                #${id} .product-description { 
+                    margin: 0.75rem 0;
+                    font-size: ${state.desc_font_size * 0.9}px;
+                }
+                #${id} .product-price-container { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+                #${id} .product-price { font-size: 2.25rem; font-weight: 800; color: ${state.price_color}; }
+                #${id} .product-compare-price { font-size: 1.25rem; text-decoration: line-through; color: var(--text-muted, #a1a1aa); }
+                #${id} .product-actions { margin-bottom: 2rem; }
+                #${id} .whatsapp-btn {
+                    background-color: ${state.button_bg_color};
+                    color: ${state.button_text_color};
+                    padding: 0.75rem 1.5rem;
+                    border-radius: 9999px;
+                    text-decoration: none;
+                    font-weight: 600;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    transition: transform 0.2s, box-shadow 0.2s;
+                    border: none;
+                    cursor: pointer;
+                }
+                #${id} .whatsapp-btn:hover { 
+                    transform: scale(1.05);
+                    box-shadow: 0 0 15px ${state.button_bg_color};
+                }
+                #${id} .order-form {
+                    background-color: ${state.form_bg_color};
+                    padding: 1.5rem;
+                    border-radius: 0.75rem;
+                    display: flex;
+                    flex-direction: column;
+                    border: ${formBorder};
+                    box-shadow: ${formShadow};
+                    transition: all 0.3s ease;
+                }
+                #${id} .order-form[dir="rtl"] label {
+                    text-align: right;
+                }
+                #${id} .form-title { 
+                    font-size: ${state.form_title_font_size}px; 
+                    font-weight: ${state.form_title_font_weight};
+                    color: ${state.form_title_color}; 
+                    margin-bottom: 1.5rem; 
+                    text-align: center;
+                }
+                #${id} .form-fields {
+                    width: 100%;
+                    margin-bottom: 1.5rem;
+                }
+                #${id} .form-group { margin-bottom: 1rem; width: 100%;}
+                #${id} .form-group label { 
+                    display: block; 
+                    width: 100%;
+                    margin-bottom: 0.5rem; 
+                    font-size: 0.875rem;
+                    color: var(--text-secondary, #a1a1aa);
+                }
+                #${id} .form-group input {
+                    width: 100%;
+                    box-sizing: border-box;
+                    background: rgba(0,0,0,0.3);
+                    border: none;
+                    outline: 1px solid rgba(255,255,255,0.1);
+                    color: inherit;
+                    padding: 0.85rem;
+                    border-radius: 0.5rem;
+                    transition: outline-color 0.2s, box-shadow 0.2s;
+                    font-size: 1rem;
+                }
+                #${id} .form-group input:focus {
+                    outline: 1px solid var(--interactive-primary, #6366f1);
+                    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+                }
+                #${id} .submit-btn {
+                    width: 100%;
+                    background-color: ${state.submit_button_bg_color};
+                    color: ${state.submit_button_text_color};
+                    padding: 0.85rem;
+                    border: none;
+                    border-radius: 0.5rem;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    letter-spacing: 0.5px;
+                    font-size: 1rem;
+                }
+                #${id} .submit-btn:disabled {
+                    background-color: #555 !important;
+                    cursor: not-allowed;
+                    opacity: 0.7;
+                }
+                #${id} .submit-btn:hover:not(:disabled) { 
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                    filter: brightness(110%);
+                }
+                #${id} .form-status {
+                    text-align: center;
+                    margin-bottom: 1rem;
+                    font-weight: 500;
+                    min-height: 1.5em;
+                }
+                #${id} .form-status.success { color: #22c55e; }
+                #${id} .form-status.error { color: #ef4444; }
+
+                #${id} .thank-you-modal-overlay {
+                    position: fixed;
+                    top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.7);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 1000;
+                    animation: fadeInModal 0.3s ease;
+                }
+                #${id} .thank-you-modal-content {
+                    background: #2d3748;
+                    padding: 2rem;
+                    border-radius: 0.75rem;
+                    text-align: center;
+                    position: relative;
+                    max-width: 90%;
+                    width: 400px;
+                    animation: scaleInModal 0.3s ease;
+                }
+                #${id} .thank-you-modal-content h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; color: #fff;}
+                #${id} .thank-you-modal-content p { color: #a0aec0; }
+                #${id} .thank-you-modal-close {
+                    position: absolute;
+                    top: 10px; right: 15px;
+                    background: none;
+                    border: none;
+                    color: #fff;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                }
+
+                @media (min-width: 768px) {
+                    #${id} {
+                        grid-template-columns: 1fr 1fr;
+                        gap: 40px;
+                        padding: ${state.desktop_padding_top}px ${state.desktop_padding_right}px ${state.desktop_padding_bottom}px ${state.desktop_padding_left}px;
+                        margin: ${state.desktop_margin_top}px ${state.desktop_margin_right}px ${state.desktop_margin_bottom}px ${state.desktop_margin_left}px;
+                    }
+                    #${id} .product-title {
+                        font-size: ${state.title_font_size}px;
+                    }
+                    #${id} .product-description {
+                        font-size: ${state.desc_font_size}px;
+                    }
+                    #${id}[data-image-position="right"] .product-gallery {
+                        order: 2;
+                    }
+                }
+            `;
+            return { html, css };
+        }
+
+        // --- NEW: Promoted Video Component Logic ---
+        function initializePromotedVideo() {
+            return {
+                video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                show_title: true,
+                title: "Check out this Video!",
+                font_class: "",
+                font_size: 32,
+                font_color: "#FFFFFF",
+                font_weight: "600",
+                font_style: "normal",
+                border_enabled: true,
+                border_width: 2,
+                border_color: "rgba(255, 255, 255, 0.2)",
+                border_style: "solid",
+                border_radius: 12,
+                shadow_enabled: true,
+                shadow_color: "#000000",
+                shadow_blur: 20,
+                shadow_transparency: 25,
+                // Standard Spacing
+                padding_top: 20, padding_right: 15, padding_bottom: 20, padding_left: 15,
+                margin_top: 10, margin_right: 10, margin_bottom: 10, margin_left: 10,
+                desktop_padding_top: 40, desktop_padding_right: 20, desktop_padding_bottom: 40, desktop_padding_left: 20,
+                desktop_margin_top: 20, desktop_margin_right: 20, desktop_margin_bottom: 20, desktop_margin_left: 20
+            };
+        }
+
+        function renderPromotedVideo(state) {
+            const id = `promoted-video-${state.id}`;
+            const videoInfo = parseVideoUrl(state.video_url);
+
+            let videoEmbedHtml = `<div class="video-placeholder"><p>Please enter a valid YouTube or Vimeo URL</p></div>`;
+
+            if (videoInfo) {
+                if (videoInfo.platform === 'youtube') {
+                    videoEmbedHtml = `<div class="video-wrapper"><iframe src="https://www.youtube.com/embed/${videoInfo.id}?rel=0&showinfo=0&controls=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+                } else if (videoInfo.platform === 'vimeo') {
+                    videoEmbedHtml = `<div class="video-wrapper"><iframe src="https://player.vimeo.com/video/${videoInfo.id}?title=0&byline=0&portrait=0" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+                }
+            }
+            
+            const titleHtml = state.show_title && state.title ? `<div class="promoted-video-title-wrapper"><h2 class="promoted-video-title ${state.font_class}">${escapeHtml(state.title)}</h2></div>` : '';
+
+            const html = `
+                <div class="promoted-video-section" id="${id}">
+                    ${titleHtml}
+                    <div class="promoted-video-container">
+                        ${videoEmbedHtml}
+                    </div>
+                </div>`;
+
+            const hexToRgb = (hex) => {
+                let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0,0,0';
+            };
+            const shadowRgba = `rgba(${hexToRgb(state.shadow_color)}, ${state.shadow_transparency / 100})`;
+
+            const css = `
+                #${id} {
+                    padding: ${state.padding_top}px ${state.padding_left}px ${state.padding_bottom}px ${state.padding_right}px;
+                    margin: ${state.margin_top}px ${state.margin_right}px ${state.margin_bottom}px ${state.margin_left}px;
+                }
+                #${id} .promoted-video-title-wrapper { text-align: center; margin-bottom: 30px; }
+                #${id} .promoted-video-title {
+                    font-size: ${state.font_size * 0.8}px;
+                    color: ${state.font_color};
+                    font-weight: ${state.font_weight};
+                    font-style: ${state.font_style};
+                    margin: 0;
+                    line-height: 1.3;
+                }
+                #${id} .promoted-video-container {
+                    max-width: 100%;
+                    margin: 0 auto;
+                    border: ${state.border_enabled ? `${state.border_width}px ${state.border_style} ${state.border_color}` : 'none'};
+                    border-radius: ${state.border_radius}px;
+                    overflow: ${state.border_radius > 0 ? 'hidden' : 'visible'};
+                    box-shadow: ${state.shadow_enabled ? `0 ${state.shadow_blur / 2}px ${state.shadow_blur}px ${shadowRgba}` : 'none'};
+                }
+                #${id} .video-wrapper { position: relative; width: 100%; height: 0; padding-bottom: 56.25%; /* 16:9 */ overflow: hidden; }
+                #${id} .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+                #${id} .video-placeholder { aspect-ratio: 16 / 9; background-color: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(255,255,255,0.2); border-radius: 8px; }
+                #${id} .video-placeholder p { color: #9ca3af; font-size: 16px; margin: 0; text-align: center; padding: 1rem; }
+                @media screen and (min-width: 768px) {
+                     #${id} {
+                        padding: ${state.desktop_padding_top}px ${state.desktop_padding_left}px ${state.desktop_padding_bottom}px ${state.desktop_padding_right}px;
+                        margin: ${state.desktop_margin_top}px ${state.desktop_margin_right}px ${state.desktop_margin_bottom}px ${state.desktop_margin_left}px;
+                     }
+                    #${id} .promoted-video-title { font-size: ${state.font_size}px; }
+                }
+            `;
+
+            return { html, css };
+        }
+        
+        function renderPromotedVideoSettings(section, state) {
+            const fontOptions = getFontOptions(section.font_class);
+
+            const fontWeightOptions = [
+                { value: "300", label: "Light" }, { value: "400", label: "Normal" }, { value: "500", label: "Medium" },
+                { value: "600", label: "Semi Bold" }, { value: "700", label: "Bold" }, { value: "800", label: "Extra Bold" }
+            ].map(o => `<option value="${o.value}" ${section.font_weight === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+
+            const fontStyleOptions = [
+                { value: "normal", label: "Normal" }, { value: "italic", label: "Italic" }
+            ].map(o => `<option value="${o.value}" ${section.font_style === o.value ? 'selected' : ''}>${o.label}</option>`).join('');
+            
+            const borderStyleOptions = ['solid', 'dashed', 'dotted', 'double'].map(s => `<option value="${s}" ${section.border_style === s ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('');
+
+            return `
+                ${createAccordion('Video Settings', `
+                    ${createTextInput('video_url', 'Video URL (YouTube or Vimeo)', section.video_url)}
+                `, true)}
+                ${createAccordion('Title Settings', `
+                    ${createCheckbox('show_title', 'Show Title', section.show_title)}
+                    ${createTextInput('title', 'Title', section.title)}
+                    ${createSelectInput('font_class', 'Font Family', fontOptions, section.font_class)}
+                    ${createRangeInput('font_size', 'Font Size', section.font_size, 16, 72, 2, 'px')}
+                    ${createColorInput('font_color', 'Font Color', section.font_color)}
+                    ${createSelectInput('font_weight', 'Font Weight', fontWeightOptions, section.font_weight)}
+                    ${createSelectInput('font_style', 'Font Style', fontStyleOptions, section.font_style)}
+                `)}
+                ${createAccordion('Border Settings', `
+                    ${createCheckbox('border_enabled', 'Enable Border', section.border_enabled)}
+                    ${createRangeInput('border_width', 'Border Width', section.border_width, 1, 20, 1, 'px')}
+                    ${createColorInput('border_color', 'Border Color', section.border_color)}
+                    ${createSelectInput('border_style', 'Border Style', borderStyleOptions, section.border_style)}
+                    ${createRangeInput('border_radius', 'Border Radius', section.border_radius, 0, 50, 1, 'px')}
+                `)}
+                ${createAccordion('Shadow Settings', `
+                    ${createCheckbox('shadow_enabled', 'Enable Shadow', section.shadow_enabled)}
+                    ${createColorInput('shadow_color', 'Shadow Color', section.shadow_color)}
+                    ${createRangeInput('shadow_blur', 'Shadow Blur', section.shadow_blur, 0, 50, 1, 'px')}
+                    ${createRangeInput('shadow_transparency', 'Shadow Transparency', section.shadow_transparency, 0, 100, 5, '%')}
+                `)}
+                ${renderSpacingSettings(section)}
+            `;
+        }
+
+        // --- NEW: Landing Page Component Logic ---
+        function initializeLandingPage() {
+            return {
+                image_urls: "https://placehold.co/1200x800/3a3897/ffffff?text=Image+1,https://placehold.co/1200x800/2c2a72/ffffff?text=Image+2,https://placehold.co/1200x800/1a1a4e/ffffff?text=Image+3",
+                 // Standard Spacing (defaults to 0 for no spacing)
+                padding_top: 0, padding_right: 0, padding_bottom: 0, padding_left: 0, 
+                margin_top: 0, margin_right: 0, margin_bottom: 0, margin_left: 0,
+                desktop_padding_top: 0, desktop_padding_right: 0, desktop_padding_bottom: 0, desktop_padding_left: 0,
+                desktop_margin_top: 0, desktop_margin_right: 0, desktop_margin_bottom: 0, desktop_margin_left: 0
+            };
+        }
+
+        function renderLandingPage(state) {
+            const id = `landing-page-${state.id}`;
+            const imageUrls = (state.image_urls || '').split(/[\s,]+/).map(url => url.trim()).filter(url => url);
+            
+            const imagesHtml = imageUrls.map(url => 
+                `<img src="${url}" class="landing-page-image" alt="Landing page image" onerror="this.style.display='none'">`
+            ).join('');
+
+            const html = `<div class="landing-page-container" id="${id}">${imagesHtml}</div>`;
+
+            const css = `
+                #${id} {
+                    padding: ${state.padding_top}px ${state.padding_left}px ${state.padding_bottom}px ${state.padding_right}px;
+                    margin: ${state.margin_top}px ${state.margin_right}px ${state.margin_bottom}px ${state.margin_left}px;
+                    line-height: 0; /* Remove space between block elements */
+                }
+                #${id} .landing-page-image {
+                    width: 100%;
+                    height: auto;
+                    display: block; /* Ensures images stack and have no extra space */
+                }
+                 @media screen and (min-width: 768px) {
+                      #${id} {
+                         padding: ${state.desktop_padding_top}px ${state.desktop_padding_left}px ${state.desktop_padding_bottom}px ${state.desktop_padding_right}px;
+                         margin: ${state.desktop_margin_top}px ${state.desktop_margin_right}px ${state.desktop_margin_bottom}px ${state.desktop_margin_left}px;
+                      }
+                 }
+            `;
+            return { html, css };
+        }
+
+        function renderLandingPageSettings(section) {
+             return `
+                ${createAccordion('Images', `
+                    ${createTextArea('image_urls', 'Image URLs (comma-separated)', section.image_urls)}
+                `, true)}
+                ${renderSpacingSettings(section)}
+            `;
+        }
+        
+        init();
+    });
+    </script>
+</body>
+</html> 

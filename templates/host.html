@@ -1,0 +1,521 @@
+{% extends "base.html" %}
+
+{% block title %}Host Dashboard - OUTA{% endblock %}
+
+{% block chart_js %}true{% endblock %}
+
+{% block extra_css %}
+:root { --sidebar-width: 280px; }
+.sidebar { width: var(--sidebar-width); transition: transform 0.3s ease-in-out; }
+@media (max-width: 1024px) {
+    .sidebar { transform: translateX(-100%); position: fixed; z-index: 50; height: 100%; }
+    .sidebar.open { transform: translateX(0); }
+    main { padding-left: 0; }
+}
+main { transition: padding-left 0.3s ease-in-out; padding-left: var(--sidebar-width); }
+.kpi-card, .content-card {
+    background: rgba(26, 26, 78, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+.dropdown-panel {
+    background-color: #1e1b34;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.sidebar-link { transition: all 0.2s ease; }
+.sidebar-link:hover, .sidebar-link.active {
+    background-color: rgba(99, 102, 241, 0.2);
+    color: #fff;
+    border-right: 3px solid #6366f1;
+}
+.sidebar-link.active i, .sidebar-link:hover i { color: #818cf8; }
+.modal { transition: opacity 0.3s ease, transform 0.3s ease; }
+.modal:not(.open) { opacity: 0; transform: scale(0.95); pointer-events: none; }
+.modal.open { opacity: 1; transform: scale(1); pointer-events: auto; }
+.code-editor {
+    font-family: 'Source Code Pro', monospace;
+    background-color: #1a1a2e;
+    border: 1px solid #2a2a4a;
+}
+{% endblock %}
+
+{% block content %}
+<div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+<div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar bg-[#111122] flex flex-col fixed top-0 left-0 h-full overflow-y-auto z-50">
+        <div class="p-6 flex items-center gap-2">
+            <h1 class="text-3xl font-black tracking-tighter text-white">OUTA</h1>
+            <span class="bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full -translate-y-2">HOST</span>
+        </div>
+        <nav class="flex-1 px-4 space-y-2">
+            <a href="#" class="sidebar-link active flex items-center gap-3 p-3 rounded-md text-gray-300" data-page="page-dashboard">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+            </a>
+            <a href="#" class="sidebar-link flex items-center gap-3 p-3 rounded-md text-gray-300" data-page="page-hosted-pages">
+                <i data-lucide="globe-2" class="w-5 h-5"></i> Hosted Pages
+            </a>
+            <a href="#" class="sidebar-link flex items-center gap-3 p-3 rounded-md text-gray-300" data-page="page-upload">
+                <i data-lucide="upload" class="w-5 h-5"></i> Upload New Page
+            </a>
+            <a href="#" class="sidebar-link flex items-center gap-3 p-3 rounded-md text-gray-300" data-page="page-domains">
+                <i data-lucide="link-2" class="w-5 h-5"></i> Custom Domains
+            </a>
+        </nav>
+        <div class="p-4 mt-auto border-t border-gray-700">
+            <a href="{{ url_for('home') }}" class="sidebar-link flex items-center gap-3 p-3 rounded-md text-gray-300">
+                <i data-lucide="arrow-left-circle" class="w-5 h-5"></i> Back to Home
+            </a>
+            <a href="{{ url_for('logout') }}" class="sidebar-link flex items-center gap-3 p-3 rounded-md text-gray-300">
+                <i data-lucide="log-out" class="w-5 h-5"></i> Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full">
+        <header class="bg-[#111122]/80 backdrop-blur-sm sticky top-0 z-30 flex items-center justify-between p-4 border-b border-gray-800">
+            <div class="flex items-center gap-4">
+                <button id="menu-btn" class="lg:hidden p-2 rounded-md hover:bg-gray-700">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <h2 id="page-title" class="text-xl font-bold">Dashboard</h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-400">Welcome, {{ user.email }}</span>
+            </div>
+        </header>
+        
+        <div class="p-4 sm:p-6 md:p-8">
+            <!-- Dashboard -->
+            <div id="page-dashboard" class="page-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                    <div class="kpi-card p-5 rounded-lg">
+                        <p class="text-sm font-medium text-gray-400">Hosted Pages</p>
+                        <p class="text-2xl sm:text-3xl font-bold mt-2">{{ pages|length }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ user.page_limit - pages|length }} slots remaining</p>
+                    </div>
+                    <div class="kpi-card p-5 rounded-lg">
+                        <p class="text-sm font-medium text-gray-400">Total Views</p>
+                        <p class="text-2xl sm:text-3xl font-bold mt-2">{{ pages|sum(attribute='views') }}</p>
+                        <p class="text-xs text-emerald-400 mt-1">All time</p>
+                    </div>
+                    <div class="kpi-card p-5 rounded-lg">
+                        <p class="text-sm font-medium text-gray-400">Custom Domains</p>
+                        <p class="text-2xl sm:text-3xl font-bold mt-2">{{ pages|selectattr('custom_domain')|list|length }}</p>
+                        <p class="text-xs text-emerald-400 mt-1">{{ pages|selectattr('domain_verified', 'equalto', True)|list|length }} verified</p>
+                    </div>
+                    <div class="kpi-card p-5 rounded-lg">
+                        <p class="text-sm font-medium text-gray-400">Page Limit</p>
+                        <p class="text-2xl sm:text-3xl font-bold mt-2">{{ user.page_limit }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Maximum pages</p>
+                    </div>
+                </div>
+                
+                <!-- Recent Pages -->
+                <div class="content-card rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-4">Recent Pages</h3>
+                    {% if pages %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-700">
+                                        <th class="text-left py-3">Title</th>
+                                        <th class="text-left py-3">Status</th>
+                                        <th class="text-left py-3">Views</th>
+                                        <th class="text-left py-3">Created</th>
+                                        <th class="text-left py-3">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for page in pages[:5] %}
+                                    <tr class="border-b border-gray-800">
+                                        <td class="py-3">{{ page.title }}</td>
+                                        <td class="py-3">
+                                            {% if page.status == 'Live' %}
+                                                <span class="px-2 py-1 bg-green-600 text-white text-xs rounded">{{ page.status }}</span>
+                                            {% else %}
+                                                <span class="px-2 py-1 bg-red-600 text-white text-xs rounded">{{ page.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-3">{{ page.views }}</td>
+                                        <td class="py-3">{{ page.created_at.strftime('%Y-%m-%d') }}</td>
+                                        <td class="py-3">
+                                            {% if page.status == 'Live' %}
+                                                <a href="{{ url_for('view_page', page_id=page.page_id) }}" target="_blank" class="text-indigo-400 hover:text-indigo-300 mr-3">View</a>
+                                            {% endif %}
+                                            <a href="{{ url_for('delete_page', page_id=page.id) }}" onclick="return confirm('Are you sure?')" class="text-red-400 hover:text-red-300">Delete</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i data-lucide="globe-2" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-300 mb-2">No Pages Yet</h3>
+                            <p class="text-gray-400 mb-4">Upload your first HTML page to get started!</p>
+                            <button onclick="showPage('page-upload')" class="btn-start">Upload Your First Page</button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Hosted Pages -->
+            <div id="page-hosted-pages" class="page-content hidden">
+                <div class="content-card rounded-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold">All Hosted Pages</h3>
+                        <button onclick="showPage('page-upload')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                            <i data-lucide="plus" class="w-4 h-4 inline mr-2"></i>Upload New Page
+                        </button>
+                    </div>
+                    
+                    {% if pages %}
+                        <div class="grid gap-4">
+                            {% for page in pages %}
+                            <div class="border border-gray-700 rounded-lg p-4">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold text-lg">{{ page.title }}</h4>
+                                        <p class="text-gray-400 text-sm">Page ID: {{ page.page_id }}</p>
+                                        {% if page.custom_domain %}
+                                            <p class="text-gray-400 text-sm">
+                                                Domain: {{ page.custom_domain }}
+                                                {% if page.domain_verified %}
+                                                    <span class="text-green-400 ml-2">✓ Verified</span>
+                                                {% else %}
+                                                    <span class="text-yellow-400 ml-2">⚠ Pending Verification</span>
+                                                {% endif %}
+                                            </p>
+                                        {% endif %}
+                                        <p class="text-gray-400 text-sm">Created: {{ page.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                        <p class="text-gray-400 text-sm">Expires: {{ page.expiration_date.strftime('%Y-%m-%d') }}</p>
+                                        <p class="text-gray-400 text-sm">Views: {{ page.views }}</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        {% if page.status == 'Live' %}
+                                            <span class="px-3 py-1 bg-green-600 text-white text-sm rounded">{{ page.status }}</span>
+                                            <a href="{{ url_for('view_page', page_id=page.page_id) }}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                                                <i data-lucide="external-link" class="w-4 h-4 inline mr-1"></i>View
+                                            </a>
+                                        {% else %}
+                                            <span class="px-3 py-1 bg-red-600 text-white text-sm rounded">{{ page.status }}</span>
+                                        {% endif %}
+                                        <a href="{{ url_for('delete_page', page_id=page.id) }}" onclick="return confirm('Are you sure you want to delete this page?')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                                            <i data-lucide="trash-2" class="w-4 h-4 inline mr-1"></i>Delete
+                                        </a>
+                                    </div>
+                                </div>
+                                {% if page.status == 'Live' %}
+                                <div class="mt-3 p-3 bg-gray-800 rounded">
+                                    <p class="text-sm text-gray-300">Public URL:</p>
+                                    <input type="text" readonly value="{{ request.url_root.rstrip('/') }}{{ url_for('view_page', page_id=page.page_id) }}" class="w-full mt-1 p-2 bg-gray-700 border border-gray-600 rounded text-sm" onclick="this.select()">
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i data-lucide="globe-2" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-300 mb-2">No Pages Yet</h3>
+                            <p class="text-gray-400 mb-4">Upload your first HTML page to get started!</p>
+                            <button onclick="showPage('page-upload')" class="btn-start">Upload Your First Page</button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Upload Page -->
+            <div id="page-upload" class="page-content hidden">
+                <div class="content-card rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-6">Upload New Page</h3>
+                    
+                    {% if user.can_host_page() %}
+                        <form method="POST" action="{{ url_for('upload_page') }}" enctype="multipart/form-data" class="space-y-6">
+                            <div>
+                                <label for="title" class="block text-sm font-medium text-gray-300 mb-2">Page Title</label>
+                                <input type="text" id="title" name="title" required class="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white" placeholder="Enter page title">
+                            </div>
+                            
+                            <div class="border-2 border-dashed border-gray-600 rounded-lg p-6">
+                                <div class="text-center">
+                                    <i data-lucide="upload-cloud" class="w-12 h-12 mx-auto text-gray-400 mb-4"></i>
+                                    <h4 class="text-lg font-medium mb-2">Upload Files</h4>
+                                    <p class="text-gray-400 mb-4">Choose your upload method:</p>
+                                </div>
+                                
+                                <div class="space-y-4">
+                                    <!-- Single HTML File -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Single HTML File</label>
+                                        <input type="file" name="html_file" accept=".html,.htm" class="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">
+                                        <p class="text-sm text-gray-400 mt-1">For self-contained HTML files. For projects with CSS or JS, use the ZIP upload.</p>
+                                    </div>
+                                    
+                                    <!-- ZIP File -->
+                                    <div class="border-t border-gray-700 pt-4">
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">ZIP Archive (Recommended)</label>
+                                        <input type="file" name="html_file" accept=".zip" class="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">
+                                        <p class="text-sm text-gray-400 mt-1">Upload a .zip file containing your entire project (HTML, CSS, JS, images).</p>
+                                    </div>
+                                    
+                                    <!-- HTML Content -->
+                                    <div class="border-t border-gray-700 pt-4">
+                                        <label for="html_content" class="block text-sm font-medium text-gray-300 mb-2">Or Paste HTML Content</label>
+                                        <textarea id="html_content" name="html_content" rows="10" class="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white code-editor" placeholder="<!DOCTYPE html>
+<html>
+<head>
+    <title>My Page</title>
+</head>
+<body>
+    <h1>Hello World!</h1>
+</body>
+</html>"></textarea>
+                                        <p class="text-sm text-gray-400 mt-1">For self-contained HTML with inline CSS/JS. For linked files, use the ZIP upload.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end">
+                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">
+                                    <i data-lucide="upload" class="w-4 h-4 inline mr-2"></i>Upload Page
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i data-lucide="alert-circle" class="w-16 h-16 mx-auto text-red-400 mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-300 mb-2">Upload Limit Reached</h3>
+                            <p class="text-gray-400 mb-4">You have reached your page limit of {{ user.page_limit }} pages. Delete some pages to upload new ones.</p>
+                            <button onclick="showPage('page-hosted-pages')" class="btn-secondary">Manage Pages</button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Custom Domains -->
+            <div id="page-domains" class="page-content hidden">
+                <div class="content-card rounded-lg p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold">Custom Domains</h3>
+                        <div class="text-sm text-gray-400">
+                            Connect your own domain to your hosted pages
+                        </div>
+                    </div>
+                    
+                    <!-- Domain Instructions -->
+                    <div class="bg-blue-600/20 border border-blue-600/30 rounded-lg p-4 mb-6">
+                        <h4 class="font-semibold text-blue-300 mb-2">How to connect your domain:</h4>
+                        <ol class="text-sm text-blue-200 space-y-2">
+                            <li>1. Add your domain to a page below, choosing your verification method (CNAME or A Record).</li>
+                            <li>2. <strong>For CNAME (recommended):</strong> Create a CNAME record in your DNS settings pointing to our servers. This is the easiest and most reliable method.</li>
+                            <li>3. <strong>For A Record:</strong> Create an A record pointing to our server's IP address: <strong>{{ server_ip }}</strong>. Note that this IP may change, so CNAME is preferred.</li>
+                            <li>4. Wait for DNS propagation (this can take up to 48 hours).</li>
+                            <li>5. We'll automatically verify and activate your domain.</li>
+                        </ol>
+                    </div>
+                    
+                    <!-- Pages with domains -->
+                    {% set pages_with_domains = pages|selectattr('custom_domain')|list %}
+                    {% if pages_with_domains %}
+                        <div class="mb-8">
+                            <h4 class="text-lg font-semibold mb-4">Pages with Custom Domains</h4>
+                            <div class="grid gap-4">
+                                {% for page in pages_with_domains %}
+                                <div class="border border-gray-700 rounded-lg p-4">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <h5 class="font-semibold">{{ page.title }}</h5>
+                                            <p class="text-gray-400 text-sm">{{ page.custom_domain }}</p>
+                                            {% if page.domain_verified %}
+                                                <div class="flex items-center gap-2 mt-2">
+                                                    <span class="px-2 py-1 bg-green-600 text-white text-xs rounded">✓ Verified</span>
+                                                    <span class="text-green-400 text-sm">Domain is active</span>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <a href="https://{{ page.custom_domain }}" target="_blank" class="text-indigo-400 hover:text-indigo-300 text-sm">
+                                                        Visit https://{{ page.custom_domain }} →
+                                                    </a>
+                                                </div>
+                                            {% else %}
+                                                <div class="mt-2">
+                                                    <span class="px-2 py-1 bg-yellow-600 text-white text-xs rounded">⚠ Pending</span>
+                                                    <div class="mt-2 p-3 bg-gray-800 rounded text-sm">
+                                                        {% if page.domain_verification_method == 'A' %}
+                                                            <p class="text-gray-300 mb-2">Add this A record to your DNS:</p>
+                                                            <div class="bg-gray-900 p-2 rounded font-mono text-xs">
+                                                                <strong>Type:</strong> A<br>
+                                                                <strong>Name:</strong> @ (or your root domain)<br>
+                                                                <strong>Value:</strong> {{ server_ip }}
+                                                            </div>
+                                                        {% else %}
+                                                            <p class="text-gray-300 mb-2">Add this CNAME record to your DNS:</p>
+                                                            <div class="bg-gray-900 p-2 rounded font-mono text-xs">
+                                                                <strong>Type:</strong> CNAME<br>
+                                                                <strong>Name:</strong> {{ page.custom_domain.split('.')[0] if '.' in page.custom_domain else '@' }}<br>
+                                                                <strong>Value:</strong> {{ page.page_id }}.outa-host.replit.app
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <button onclick="removeDomain('{{ page.id }}')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                                                <i data-lucide="unlink" class="w-4 h-4 inline mr-1"></i>Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Add domain section -->
+                    <div>
+                        <h4 class="text-lg font-semibold mb-4">Add Domain to Page</h4>
+                        {% set available_pages = pages|selectattr('status', 'equalto', 'Live')|rejectattr('custom_domain')|list %}
+                        {% if available_pages %}
+                            <form method="POST" action="{{ url_for('add_custom_domain') }}" class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label for="page_id" class="block text-sm font-medium text-gray-300 mb-2">Select Page</label>
+                                        <select id="page_id" name="page_id" required class="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">
+                                            <option value="">Choose a page...</option>
+                                            {% for page in available_pages %}
+                                                <option value="{{ page.id }}">{{ page.title }} ({{ page.page_id }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="custom_domain" class="block text-sm font-medium text-gray-300 mb-2">Domain Name</label>
+                                        <input type="text" id="custom_domain" name="custom_domain" required 
+                                               class="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white" 
+                                               placeholder="example.com"
+                                               pattern="^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$">
+                                    </div>
+                                    <div>
+                                        <label for="verification_method" class="block text-sm font-medium text-gray-300 mb-2">Verification Method</label>
+                                        <select id="verification_method" name="verification_method" required class="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white">
+                                            <option value="CNAME">CNAME (recommended)</option>
+                                            <option value="A">A Record</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">
+                                        <i data-lucide="link" class="w-4 h-4 inline mr-2"></i>Add Domain
+                                    </button>
+                                </div>
+                            </form>
+                        {% else %}
+                            <div class="text-center py-8">
+                                <i data-lucide="globe" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                                <h5 class="text-lg font-medium text-gray-300 mb-2">No Available Pages</h5>
+                                <p class="text-gray-400 mb-4">You need live pages without existing domains to add custom domains.</p>
+                                <button onclick="showPage('page-upload')" class="btn-start">Upload a Page</button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+// Navigation
+const sidebar = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const menuBtn = document.getElementById('menu-btn');
+const sidebarLinks = document.querySelectorAll('.sidebar-link[data-page]');
+const pageContents = document.querySelectorAll('.page-content');
+const pageTitle = document.getElementById('page-title');
+
+function showPage(pageId) {
+    // Update active link
+    sidebarLinks.forEach(link => {
+        if (link.dataset.page === pageId) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+    
+    // Show/hide pages
+    pageContents.forEach(page => {
+        if (page.id === pageId) {
+            page.classList.remove('hidden');
+        } else {
+            page.classList.add('hidden');
+        }
+    });
+    
+    // Update title
+    const activeLink = document.querySelector(`.sidebar-link[data-page="${pageId}"]`);
+    if (activeLink) {
+        pageTitle.textContent = activeLink.textContent.trim();
+    }
+    
+    // Close sidebar on mobile
+    if (window.innerWidth < 1024) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.add('hidden');
+    }
+}
+
+// Sidebar toggle
+menuBtn.addEventListener('click', () => {
+    sidebar.classList.add('open');
+    sidebarOverlay.classList.remove('hidden');
+});
+
+sidebarOverlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.add('hidden');
+});
+
+// Navigation links
+sidebarLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        showPage(link.dataset.page);
+    });
+});
+
+// Initialize
+showPage('page-dashboard');
+
+// Domain management functions
+function removeDomain(pageId) {
+    if (confirm('Are you sure you want to remove this custom domain?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/remove_custom_domain/${pageId}`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function verifyDomain(pageId) {
+    fetch(`/verify_domain/${pageId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while verifying the domain.');
+        });
+}
+{% endblock %}

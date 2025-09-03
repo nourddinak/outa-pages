@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+.hero-bg {
+    position: relative;
+    background-color: black;
+    background-image: url('https://20essentials.github.io/project-000-128/assets/n1.avif');
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+}
+
+.hero-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    mix-blend-mode: overlay;
+    animation: moveInner 10s ease infinite alternate;
+}
+
+.content-wrapper {
+    position: relative;
+    z-index: 3;
+}
+
+@keyframes moveInner {
+    0% { background-color: #f0f; }
+    25% { background-color: #0f0; }
+    50% { background-color: #00f; }
+    75% { background-color: #f00; }
+    100% { background-color: #ff0; }
+}
+
+.feature-card {
+    background: rgba(26, 26, 78, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+.feature-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(99, 102, 241, 0.7);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+.btn-start {
+    background: #6366f1;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+}
+.btn-start:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(99, 102, 241, 0.8);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    border: 2px solid #818cf8;
+}
+.btn-secondary:hover {
+    background: #818cf8;
+    color: #0a0a1a;
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(129, 140, 248, 0.5);
+}
+
+/* Contact Form Styles */
+#contact {
+    padding: 4rem 1.5rem;
+    position: relative;
+    background-color: black;
+    background-image: url('https://20essentials.github.io/project-000-128/assets/n1.avif');
+    background-position: center;
+    background-size: cover;
+}
+
+#contact::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    mix-blend-mode: overlay;
+    animation: moveInner 10s ease infinite alternate;
+}
+
+#contact .container {
+    max-width: 700px;
+    width: 100%;
+    margin: auto;
+    position: relative;
+    z-index: 2;
+}
+
+#contact .screen {
+    position: relative;
+    background: #2d3748;
+    border-radius: 15px;
+}
+
+@keyframes animateGlow {
+   0%{background-position:0% 50%}
+   50%{background-position:100% 50%}
+   100%{background-position:0% 50%}
+}
+
+#contact .screen::after {
+    content: "";
+    position: absolute;
+    top: 35px;
+    left: 0;
+    z-index: -1;
+    height: 100%;
+    width: 100%;
+    transform: scale(0.85);
+    filter: blur(45px);
+    background: linear-gradient(270deg, #0fffc1, #7e0fff);
+    background-size: 200% 200%;
+    animation: animateGlow 10s ease infinite;
+}
+
+#contact .screen-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    background: #4a5568;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+#contact .screen-header-left { margin-right: auto; }
+
+#contact .screen-header-button {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 3px;
+    border-radius: 8px;
+    background: white;
+}
+
+#contact .screen-header-button.close { background: #ed64a6; }
+#contact .screen-header-button.maximize { background: #f6e05e; }
+#contact .screen-header-button.minimize { background: #68d391; }
+
+#contact .screen-header-right { display: flex; }
+#contact .screen-header-ellipsis {
+    width: 3px;
+    height: 3px;
+    margin-left: 2px;
+    border-radius: 8px;
+    background: #999;
+}
+
+#contact .screen-body { display: flex; }
+#contact .screen-body-item { flex: 1; padding: 50px; }
+#contact .screen-body-item.left {
+    display: flex;
+    flex-direction: column;
+}
+
+#contact .app-title {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    font-size: 26px;
+    font-weight: 900;
+    animation: textColor 10s ease infinite;
+}
+
+@keyframes textColor {
+    0% { color: #7e0fff; }
+    50% { color: #0fffc1; }
+    100% { color: #7e0fff; }
+}
+
+@keyframes textColorAfter {
+    0% { background: #7e0fff; }
+    50% { background: #0fffc1; }
+    100% { background: #7e0fff; }
+}
+
+#contact .app-title:after {
+    content: '';
+    display: block;
+    position: absolute;
+    left: 0;
+    bottom: -10px;
+    width: 25px;
+    height: 4px;
+    animation: textColorAfter 10s ease infinite;
+}
+
+#contact .app-contact {
+    margin-top: auto;
+    font-size: 8px;
+    color: #a0aec0;
+}
+
+#contact .app-form-group { margin-bottom: 15px; }
+#contact .app-form-group.message { margin-top: 40px; }
+#contact .app-form-group.buttons { margin-bottom: 0; text-align: right; }
+
+#contact .app-form-control {
+    width: 100%;
+    padding: 10px 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid #666;
+    color: #ddd;
+    font-size: 14px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color .2s;
+}
+
+#contact .app-form-control::placeholder { color: #a0aec0; }
+#contact .app-form-control:focus { border-bottom-color: #ddd; }
+#contact .app-form-button {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    padding: 0.5rem;
+}
+#contact .app-form-button:hover { color: #829dff; }
+
+@media screen and (max-width: 520px) {
+    #contact .screen-body { flex-direction: column; }
+    #contact .screen-body-item.left { margin-bottom: 30px; }
+    #contact .app-title { flex-direction: row; font-size: 22px; }
+    #contact .app-title span { margin-right: 12px; }
+    #contact .app-title:after { display: none; }
+    #contact .screen-body-item { padding: 30px; }
+}
+
+@media screen and (max-width: 600px) {
+    #contact .screen-body { padding: 40px; }
+    #contact .screen-body-item { padding: 0; }
+}
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<main class="hero-bg">
+    <!-- Profile Icon -->
+    <div id="user-profile-icon" class="absolute top-4 right-4 z-40 w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center cursor-pointer text-white text-xl font-bold hover:bg-indigo-700 transition-colors">
+        <span id="user-initial">U</span>
+    </div>
+
+    <!-- Profile Popup -->
+    <div id="user-popup" class="hidden absolute top-20 right-4 z-50 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 text-left">
+        <div class="border-b border-gray-600 pb-2 mb-2">
+            <p id="popup-user-name" class="font-bold text-white">User Name</p>
+            <p id="popup-user-email" class="text-sm text-gray-400">user@example.com</p>
+        </div>
+        <a href="{{ url_for('logout') }}" id="sign-out-btn" class="w-full block text-left px-2 py-1.5 text-sm text-red-400 hover:bg-gray-700 rounded">Sign Out</a>
+    </div>
+
+    <div class="content-wrapper flex flex-col items-center justify-center min-h-screen p-6 text-center">
+        <header class="mb-8">
+            <div class="flex items-center gap-4">
+                <h1 class="text-5xl sm:text-6xl md:text-8xl font-black tracking-tighter">OUTA</h1>
+                <span class="bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full -translate-y-4">BETA</span>
+            </div>
+        </header>
+        
+        <p class="text-base sm:text-lg md:text-xl max-w-2xl text-gray-300 mb-8">
+            Welcome to OUTA, the visual page builder for modern e-commerce. Go from idea to a high-converting landing page in minutes. No code required.
+        </p>
+        
+        <!-- Action Buttons Container -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a href="{{ url_for('builder') }}" class="btn-start inline-flex items-center gap-2">
+                Start Building for Free
+                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            </a>
+            <a href="{{ url_for('host_dashboard') }}" class="btn-secondary inline-flex items-center gap-2">
+                Host Your Page Now
+                <i data-lucide="server" class="w-5 h-5"></i>
+            </a>
+        </div>
+    </div>
+</main>
+
+<!-- Features Section -->
+<section id="features" class="content-wrapper py-16 px-4 md:py-20 md:px-6 bg-[#0a0a1a]">
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-5xl font-bold">All The Features You Need</h2>
+            <p class="text-md md:text-lg text-gray-400 mt-2">Built to be powerful, yet simple to use.</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="feature-card rounded-lg p-6">
+                <i data-lucide="layout-template" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                <h3 class="text-xl font-bold mb-2">Visual Editor</h3>
+                <p class="text-gray-400">Drag, drop, and customize sections in a live preview. See your changes instantly as you build your perfect page.</p>
+            </div>
+            <!-- Feature 2 -->
+            <div class="feature-card rounded-lg p-6">
+                <i data-lucide="box" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                <h3 class="text-xl font-bold mb-2">Rich Components</h3>
+                <p class="text-gray-400">Start with pre-built sections like Product Pages, Video Promos, Welcome Bars, and Image Galleries.</p>
+            </div>
+            <!-- Feature 3 -->
+            <div class="feature-card rounded-lg p-6">
+                <i data-lucide="code" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                <h3 class="text-xl font-bold mb-2">Custom HTML/CSS/JS</h3>
+                <p class="text-gray-400">Power users can upload their own custom HTML, CSS, and JavaScript files for unlimited flexibility and control.</p>
+            </div>
+            <!-- Feature 4 -->
+            <div class="feature-card rounded-lg p-6">
+                <i data-lucide="smartphone" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                <h3 class="text-xl font-bold mb-2">Responsive Hosting</h3>
+                <p class="text-gray-400">Your pages are automatically hosted with responsive design, ensuring they look great on all devices.</p>
+            </div>
+            <!-- Feature 5 -->
+            <div class="feature-card rounded-lg p-6">
+                <i data-lucide="zap" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                <h3 class="text-xl font-bold mb-2">Lightning Fast</h3>
+                <p class="text-gray-400">Our hosting infrastructure ensures your pages load quickly, improving user experience and conversion rates.</p>
+            </div>
+            <!-- Feature 6 -->
+            <div class="feature-card rounded-lg p-6">
+                <i data-lucide="shield-check" class="w-10 h-10 mb-4 text-indigo-400"></i>
+                <h3 class="text-xl font-bold mb-2">Secure & Reliable</h3>
+                <p class="text-gray-400">Enterprise-grade security and 99.9% uptime guarantee. Your pages are safe and always accessible.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Saved Projects Section -->
+<section id="saved-projects" class="content-wrapper py-16 px-4 md:py-20 md:px-6 bg-[#0a0a1a]">
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl md:text-5xl font-bold">Your Saved Projects</h2>
+            <p class="text-md md:text-lg text-gray-400 mt-2">Continue editing or export your creations.</p>
+        </div>
+        
+        <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact">
+    <div class="container">
+        <div class="screen">
+            <div class="screen-header">
+                <div class="screen-header-left">
+                    <div class="screen-header-button close"></div>
+                    <div class="screen-header-button maximize"></div>
+                    <div class="screen-header-button minimize"></div>
+                </div>
+                <div class="screen-header-right">
+                    <div class="screen-header-ellipsis"></div>
+                    <div class="screen-header-ellipsis"></div>
+                    <div class="screen-header-ellipsis"></div>
+                </div>
+            </div>
+            <div class="screen-body">
+                <div class="screen-body-item left">
+                    <div class="app-title">
+                        <span>CONTACT</span>
+                        <span>US</span>
+                    </div>
+                    <div class="app-contact">CONTACT INFO : +62 81 314 928 595</div>
+                </div>
+                <div class="screen-body-item">
+                    <form method="POST" action="{{ url_for('contact') }}" class="app-form">
+                        <div class="app-form-group">
+                            <input class="app-form-control" placeholder="NAME" name="name" required>
+                        </div>
+                        <div class="app-form-group">
+                            <input class="app-form-control" placeholder="EMAIL" name="email" type="email" required>
+                        </div>
+                        <div class="app-form-group message">
+                            <input class="app-form-control" placeholder="MESSAGE" name="message" required>
+                        </div>
+                        <div class="app-form-group buttons">
+                            <button class="app-form-button" type="submit">SEND</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Code Modal for Saved Projects -->
+<div id="code-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3 id="modal-title" class="text-2xl font-bold mb-4">Project Code</h3>
+        <pre><code id="modal-code" class="modal-code-block text-green-300"></code></pre>
+        <div class="mt-6 text-right">
+            <button id="close-modal-btn" class="btn-secondary">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+// Profile popup logic
+(function() {
+    const userProfileIcon = document.getElementById('user-profile-icon');
+    const userPopup = document.getElementById('user-popup');
+    const userInitial = document.getElementById('user-initial');
+    const nameEl = document.getElementById('popup-user-name');
+    const emailEl = document.getElementById('popup-user-email');
+
+    // Placeholder values; replace with real user session data if available in template context
+    const currentUser = { name: 'User', email: 'user@example.com' };
+    if (userInitial) userInitial.textContent = (currentUser.name || 'U').charAt(0).toUpperCase();
+    if (nameEl) nameEl.textContent = currentUser.name;
+    if (emailEl) emailEl.textContent = currentUser.email;
+
+    if (userProfileIcon && userPopup) {
+        userProfileIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userPopup.classList.toggle('hidden');
+        });
+        window.addEventListener('click', () => {
+            if (!userPopup.classList.contains('hidden')) userPopup.classList.add('hidden');
+        });
+    }
+})();
+
+// Saved projects rendering and modal
+(function() {
+    const projectsGrid = document.getElementById('projects-grid');
+    const codeModal = document.getElementById('code-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const modalTitle = document.getElementById('modal-title');
+    const modalCode = document.getElementById('modal-code');
+
+    if (!projectsGrid) return;
+
+    const savedProjects = [
+        { id: 1, name: 'Summer Sale Landing Page', code: '<h1>Summer Sale!</h1>' },
+        { id: 2, name: 'New Product Launch', code: '<div><h2>Our New Product</h2></div>' },
+        { id: 3, name: 'About Us Page', code: '<p>Welcome to our company.</p>' }
+    ];
+
+    function renderProjects() {
+        projectsGrid.innerHTML = '';
+        savedProjects.forEach(project => {
+            const card = document.createElement('div');
+            card.className = 'project-card rounded-lg';
+            card.innerHTML = `
+                <div class="project-thumbnail">
+                    <span>${project.name.split(' ').map(w => w[0]).join('')}</span>
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold mb-4">${project.name}</h3>
+                    <div class="flex items-center gap-4">
+                        <a href="${'{{ url_for(\'builder\') }}'}?projectId=${project.id}" class="btn-project flex-1 text-center">Edit Project</a>
+                        <button data-project-id="${project.id}" class="btn-project get-code-btn flex-1">Get Code</button>
+                    </div>
+                </div>`;
+            projectsGrid.appendChild(card);
+        });
+    }
+
+    function showCodeModal(projectId) {
+        const project = savedProjects.find(p => p.id == projectId);
+        if (!project) return;
+        modalTitle.textContent = `${project.name} - Code`;
+        modalCode.textContent = project.code;
+        codeModal.classList.remove('hidden');
+    }
+
+    function hideCodeModal() {
+        codeModal.classList.add('hidden');
+    }
+
+    projectsGrid.addEventListener('click', (e) => {
+        const btn = e.target.closest('.get-code-btn');
+        if (!btn) return;
+        showCodeModal(btn.dataset.projectId);
+    });
+
+    if (closeModalBtn) closeModalBtn.addEventListener('click', hideCodeModal);
+    if (codeModal) codeModal.addEventListener('click', (e) => { if (e.target === codeModal) hideCodeModal(); });
+
+    renderProjects();
+})();
+{% endblock %}

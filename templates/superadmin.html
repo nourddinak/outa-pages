@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Super Admin - OUTA{% endblock %}
+
+{% block chart_js %}true{% endblock %}
+
+{% block extra_css %}
+:root { --sidebar-width: 280px; }
+.sidebar { width: var(--sidebar-width); transition: transform 0.3s ease-in-out; }
+@media (max-width: 1024px) {
+    .sidebar { transform: translateX(-100%); position: fixed; z-index: 50; height: 100%; }
+    .sidebar.open { transform: translateX(0); }
+    main { padding-left: 0; }
+}
+main { transition: padding-left 0.3s ease-in-out; padding-left: var(--sidebar-width); }
+.sidebar-link:hover, .sidebar-link.active {
+    background-color: rgba(220, 38, 38, 0.2);
+    color: #fff;
+    border-right: 3px solid #dc2626;
+}
+.sidebar-link.active i, .sidebar-link:hover i { color: #f87171; }
+.modal { transition: opacity 0.3s ease, transform 0.3s ease; }
+.modal:not(.open) { opacity: 0; transform: scale(0.95); pointer-events: none; }
+.modal.open { opacity: 1; transform: scale(1); pointer-events: auto; }
+{% endblock %}
+
+{% block content %}
+<div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+<div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar bg-[#111122] flex flex-col fixed top-0 left-0 h-full overflow-y-auto z-50">
+        <div class="p-6 flex items-center gap-2 border-b border-red-500/20">
+            <i data-lucide="shield-alert" class="w-8 h-8 text-red-500"></i>
+            <h1 class="text-xl font-black tracking-tighter text-white">SUPER ADMIN</h1>
+        </div>
+        <nav class="flex-1 px-4 py-4 space-y-2">
+            <a href="#" class="sidebar-link active flex items-center gap-3 p-3 rounded-md text-gray-300" data-page="page-dashboard">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+            </a>
+            <a href="#" class="sidebar-link flex items-center gap-3 p-3 rounded-md text-gray-300" data-page="page-users">
+                <i data-lucide="users" class="w-5 h-5"></i> User Management
+            </a>
+            <a href="#" class="sidebar-link flex items-center gap-3 p-3 rounded-md text-gray-300" data-page="page-messages">
+                <i data-lucide="mail" class="w-5 h-5"></i> Messages
+            </a>
+        </nav>
+        <div class="p-4 mt-auto border-t border-gray-700">
+            <a href="{{ url_for('home') }}" class="sidebar-link flex items-center gap-3 p-3 rounded-md text-gray-300">
+                <i data-lucide="log-out" class="w-5 h-5"></i> Exit Admin Panel
+            </a>
+            <a href="{{ url_for('logout') }}" class="sidebar-link flex items-center gap-3 p-3 rounded-md text-gray-300">
+                <i data-lucide="user-x" class="w-5 h-5"></i> Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full">
+        <header class="bg-[#111122]/80 backdrop-blur-sm sticky top-0 z-30 flex items-center justify-between p-4 border-b border-gray-800">
+            <div class="flex items-center gap-4">
+                <button id="menu-btn" class="lg:hidden p-2 rounded-md hover:bg-gray-700">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <h2 id="page-title" class="text-xl font-bold">Dashboard</h2>
+            </div>
+        </header>
+        
+        <div class="p-4 sm:p-6 md:p-8">
+            <!-- Dashboard -->
+            <div id="page-dashboard" class="page-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                    <div class="content-card p-5 rounded-lg">
+                        <p class="text-sm font-medium text-gray-400">Total Users</p>
+                        <p class="text-2xl sm:text-3xl font-bold mt-2">{{ stats.total_users }}</p>
+                    </div>
+                    <div class="content-card p-5 rounded-lg">
+                        <p class="text-sm font-medium text-gray-400">Active Users</p>
+                        <p class="text-2xl sm:text-3xl font-bold mt-2">{{ stats.active_users }}</p>
+                    </div>
+                    <div class="content-card p-5 rounded-lg">
+                        <p class="text-sm font-medium text-gray-400">Total Pages Hosted</p>
+                        <p class="text-2xl sm:text-3xl font-bold mt-2">{{ stats.total_pages }}</p>
+                    </div>
+                    <div class="content-card p-5 rounded-lg">
+                        <p class="text-sm font-medium text-gray-400">Blocked Users</p>
+                        <p class="text-2xl sm:text-3xl font-bold mt-2 text-red-500">{{ stats.blocked_users }}</p>
+                    </div>
+                </div>
+                <div class="content-card p-5 rounded-lg">
+                    <h3 class="font-bold mb-4">Recent Activity</h3>
+                    <div class="space-y-3">
+                        {% for user in users.items %}
+                            {% if loop.index <= 5 %}
+                        <div class="flex justify-between items-center p-3 bg-gray-800/50 rounded">
+                            <div>
+                                <p class="font-medium">{{ user.email }}</p>
+                                <p class="text-sm text-gray-400">{{ user.hosted_pages|length }} pages hosted</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm">{{ user.first_sign_in.strftime('%Y-%m-%d') }}</p>
+                                <span class="px-2 py-1 text-xs rounded {% if user.is_blocked %}bg-red-600{% else %}bg-green-600{% endif %}">
+                                    {{ user.get_status() }}
+                                </span>
+                            </div>
+                        </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Management -->
+            <div id="page-users" class="page-content hidden">
+                <div class="content-card rounded-lg p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold">User Management</h3>
+                        <!-- User Search -->
+                        <form method="GET" class="flex gap-2">
+                            <input type="hidden" name="page" value="1">
+                            <input type="text" name="user_search" value="{{ user_search }}" placeholder="Search users..." class="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-sm">
+                                <i data-lucide="search" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    {% if users.items %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-700">
+                                        <th class="text-left py-3">Email</th>
+                                        <th class="text-left py-3">First Sign In</th>
+                                        <th class="text-left py-3">Status</th>
+                                        <th class="text-left py-3">Page Limit</th>
+                                        <th class="text-left py-3">Hosted Pages</th>
+                                        <th class="text-left py-3">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users.items %}
+                                    <tr class="border-b border-gray-800">
+                                        <td class="py-3">{{ user.email }}</td>
+                                        <td class="py-3">{{ user.first_sign_in.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td class="py-3">
+                                            {% if user.is_blocked %}
+                                                <span class="px-2 py-1 bg-red-600 text-white text-xs rounded">Blocked</span>
+                                            {% else %}
+                                                <span class="px-2 py-1 bg-green-600 text-white text-xs rounded">Active</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-3">
+                                            <form method="POST" action="{{ url_for('edit_user_limit', user_id=user.id) }}" class="flex items-center gap-2">
+                                                <input type="number" name="page_limit" value="{{ user.page_limit }}" min="1" max="999" class="w-16 px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs">
+                                                <button type="submit" class="text-indigo-400 hover:text-indigo-300 text-xs">Update</button>
+                                            </form>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="space-y-1">
+                                                {% for page in user.hosted_pages %}
+                                                <div class="text-xs">
+                                                    <span class="font-medium">{{ page.title[:20] }}{% if page.title|length > 20 %}...{% endif %}</span>
+                                                    <span class="px-1 py-0.5 {% if page.status == 'Live' %}bg-green-500{% else %}bg-red-500{% endif %} text-white rounded">{{ page.status }}</span>
+                                                </div>
+                                                {% endfor %}
+                                                {% if not user.hosted_pages %}
+                                                <span class="text-gray-400">No pages</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="flex flex-col gap-1">
+                                                {% if user.is_blocked %}
+                                                    <a href="{{ url_for('unblock_user', user_id=user.id) }}" onclick="return confirm('Unblock this user?')" class="text-green-400 hover:text-green-300 text-xs">Unblock</a>
+                                                {% else %}
+                                                    <a href="{{ url_for('block_user', user_id=user.id) }}" onclick="return confirm('Block this user?')" class="text-red-400 hover:text-red-300 text-xs">Block</a>
+                                                {% endif %}
+                                                <a href="{{ url_for('delete_user', user_id=user.id) }}" onclick="return confirm('Permanently delete this user and all their pages?')" class="text-red-500 hover:text-red-400 text-xs">Delete</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if users.pages > 1 %}
+                        <div class="flex justify-center mt-4 gap-2">
+                            {% if users.has_prev %}
+                                <a href="{{ url_for('superadmin', page=users.prev_num, user_search=user_search) }}" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">Previous</a>
+                            {% endif %}
+                            
+                            {% for page_num in users.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != users.page %}
+                                        <a href="{{ url_for('superadmin', page=page_num, user_search=user_search) }}" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">{{ page_num }}</a>
+                                    {% else %}
+                                        <span class="px-3 py-1 bg-indigo-600 rounded text-sm">{{ page_num }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="px-3 py-1 text-gray-500">…</span>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if users.has_next %}
+                                <a href="{{ url_for('superadmin', page=users.next_num, user_search=user_search) }}" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">Next</a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i data-lucide="users" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-300 mb-2">No Users Found</h3>
+                            {% if user_search %}
+                                <p class="text-gray-400">No users match your search "{{ user_search }}"</p>
+                                <a href="{{ url_for('superadmin') }}" class="text-indigo-400 hover:text-indigo-300 text-sm">Clear search</a>
+                            {% else %}
+                                <p class="text-gray-400">Users will appear here once they register.</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div id="page-messages" class="page-content hidden">
+                <div class="content-card rounded-lg p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold">Contact Messages</h3>
+                        <!-- Message Search -->
+                        <form method="GET" class="flex gap-2">
+                            <input type="hidden" name="page" value="1">
+                            <input type="text" name="message_search" value="{{ message_search }}" placeholder="Search messages..." class="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white text-sm">
+                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-sm">
+                                <i data-lucide="search" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    {% if messages.items %}
+                        <div class="space-y-4">
+                            {% for message in messages.items %}
+                            <div class="border border-gray-700 rounded-lg p-4 {% if not message.is_read %}border-l-4 border-l-indigo-500{% endif %}">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-semibold">{{ message.name }}</h4>
+                                            {% if not message.is_read %}
+                                                <span class="px-2 py-1 bg-indigo-600 text-white text-xs rounded">NEW</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="text-sm text-gray-400">{{ message.email }}</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs text-gray-400">{{ message.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                                        <div class="flex gap-1">
+                                            <a href="{{ url_for('mark_message_read', message_id=message.id) }}" 
+                                               class="p-1 text-indigo-400 hover:text-indigo-300 text-xs"
+                                               title="{% if message.is_read %}Mark as unread{% else %}Mark as read{% endif %}">
+                                                <i data-lucide="{% if message.is_read %}mail{% else %}mail-open{% endif %}" class="w-4 h-4"></i>
+                                            </a>
+                                            <a href="{{ url_for('delete_message', message_id=message.id) }}" 
+                                               onclick="return confirm('Delete this message?')"
+                                               class="p-1 text-red-400 hover:text-red-300 text-xs"
+                                               title="Delete message">
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-gray-300">{{ message.message }}</p>
+                                {% if message.message|length > 200 %}
+                                <button onclick="toggleMessage(this)" class="text-indigo-400 hover:text-indigo-300 text-sm mt-2">Show more</button>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if messages.pages > 1 %}
+                        <div class="flex justify-center mt-4 gap-2">
+                            {% if messages.has_prev %}
+                                <a href="{{ url_for('superadmin', page=messages.prev_num, message_search=message_search) }}" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">Previous</a>
+                            {% endif %}
+                            
+                            {% for page_num in messages.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != messages.page %}
+                                        <a href="{{ url_for('superadmin', page=page_num, message_search=message_search) }}" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">{{ page_num }}</a>
+                                    {% else %}
+                                        <span class="px-3 py-1 bg-indigo-600 rounded text-sm">{{ page_num }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="px-3 py-1 text-gray-500">…</span>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if messages.has_next %}
+                                <a href="{{ url_for('superadmin', page=messages.next_num, message_search=message_search) }}" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">Next</a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i data-lucide="mail" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-300 mb-2">No Messages Found</h3>
+                            {% if message_search %}
+                                <p class="text-gray-400">No messages match your search "{{ message_search }}"</p>
+                                <a href="{{ url_for('superadmin') }}" class="text-indigo-400 hover:text-indigo-300 text-sm">Clear search</a>
+                            {% else %}
+                                <p class="text-gray-400">Contact messages will appear here.</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+// Navigation
+const sidebar = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const menuBtn = document.getElementById('menu-btn');
+const sidebarLinks = document.querySelectorAll('.sidebar-link[data-page]');
+const pageContents = document.querySelectorAll('.page-content');
+const pageTitle = document.getElementById('page-title');
+
+function showPage(pageId) {
+    // Update active link
+    sidebarLinks.forEach(link => {
+        if (link.dataset.page === pageId) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+    
+    // Show/hide pages
+    pageContents.forEach(page => {
+        if (page.id === pageId) {
+            page.classList.remove('hidden');
+        } else {
+            page.classList.add('hidden');
+        }
+    });
+    
+    // Update title
+    const activeLink = document.querySelector(`.sidebar-link[data-page="${pageId}"]`);
+    if (activeLink) {
+        pageTitle.textContent = activeLink.textContent.trim();
+    }
+    
+    // Close sidebar on mobile
+    if (window.innerWidth < 1024) {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.add('hidden');
+    }
+}
+
+// Sidebar toggle
+menuBtn.addEventListener('click', () => {
+    sidebar.classList.add('open');
+    sidebarOverlay.classList.remove('hidden');
+});
+
+sidebarOverlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.add('hidden');
+});
+
+// Navigation links
+sidebarLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        showPage(link.dataset.page);
+    });
+});
+
+// Initialize
+showPage('page-dashboard');
+{% endblock %}
